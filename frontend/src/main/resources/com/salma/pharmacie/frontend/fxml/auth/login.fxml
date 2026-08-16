@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.Font?>
+
+<VBox alignment="CENTER" spacing="15.0"
+      xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.salma.pharmacie.frontend.controller.auth.LoginController"
+      prefWidth="420" prefHeight="320">
+
+    <padding>
+        <Insets bottom="20.0" left="20.0" right="20.0" top="20.0"/>
+    </padding>
+
+    <Label text="Gestion de Pharmacie">
+        <font><Font name="System Bold" size="24.0"/></font>
+    </Label>
+
+    <GridPane vgap="10" hgap="10" alignment="CENTER">
+        <Label text="Email:" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+        <TextField fx:id="emailField" GridPane.columnIndex="1" GridPane.rowIndex="0"/>
+
+        <Label text="Mot de passe:" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
+        <PasswordField fx:id="passwordField" GridPane.columnIndex="1" GridPane.rowIndex="1"/>
+    </GridPane>
+
+    <Button text="Se connecter" onAction="#handleLogin"
+            prefWidth="160" style="-fx-background-color: #2ecc71; -fx-text-fill: white;"/>
+
+    <Hyperlink text="Créer un compte client" onAction="#openRegister"/>
+
+    <Label fx:id="errorLabel" textFill="red"/>
+</VBox>

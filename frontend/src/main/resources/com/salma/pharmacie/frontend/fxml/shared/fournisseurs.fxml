@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+
+<VBox spacing="10"
+      xmlns="http://javafx.com/javafx/17"
+      xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.salma.pharmacie.frontend.controller.shared.FournisseurControllerFX">
+
+    <padding>
+        <Insets top="20" right="20" bottom="20" left="20"/>
+    </padding>
+
+    <HBox spacing="10" alignment="CENTER_LEFT">
+        <Label text="Gestion des Fournisseurs" style="-fx-font-size: 20; -fx-font-weight: bold;"/>
+        <Region HBox.hgrow="ALWAYS"/>
+
+        <TextField fx:id="searchField" promptText="Rechercher (nom / tel)" prefWidth="220"/>
+        <Button text="Actualiser" onAction="#loadFournisseurs"/>
+        <Button text="Ajouter fournisseur" onAction="#handleAddFournisseur"
+                style="-fx-background-color: #2ecc71; -fx-text-fill: white;"/>
+    </HBox>
+
+    <TableView fx:id="fournisseurTable" VBox.vgrow="ALWAYS">
+        <columns>
+            <TableColumn fx:id="idCol" text="ID" prefWidth="80"/>
+            <TableColumn fx:id="nomCol" text="Nom" prefWidth="260"/>
+            <TableColumn fx:id="telCol" text="Téléphone" prefWidth="180"/>
+            <TableColumn fx:id="actionsCol" text="Actions" prefWidth="220"/>
+        </columns>
+    </TableView>
+
+    <Separator/>
+
+    <HBox spacing="10" alignment="CENTER_LEFT">
+        <Label text="Fournitures du fournisseur sélectionné" style="-fx-font-weight: bold;"/>
+        <Region HBox.hgrow="ALWAYS"/>
+        <Button text="Actualiser fournitures" onAction="#loadFournitures"/>
+        <Button text="Ajouter produit (fourniture)" onAction="#handleAddFourniture"
+                style="-fx-background-color: #3498db; -fx-text-fill: white;"/>
+    </HBox>
+
+    <TableView fx:id="fournitureTable" prefHeight="220">
+        <columns>
+            <TableColumn fx:id="prodIdCol" text="Produit ID" prefWidth="120"/>
+            <TableColumn fx:id="prodNomCol" text="Nom Produit" prefWidth="260"/>
+            <TableColumn fx:id="prixAchatCol" text="Prix Achat" prefWidth="140"/>
+            <TableColumn fx:id="fActionsCol" text="Actions" prefWidth="220"/>
+        </columns>
+    </TableView>
+
+</VBox>

@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.chart.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns="http://javafx.com/javafx/17"
+      xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.salma.pharmacie.frontend.controller.responsable.RapportsControllerFX"
+      spacing="12">
+
+    <padding>
+        <Insets top="12" right="12" bottom="12" left="12"/>
+    </padding>
+
+    <Label text="Rapports (Courbe en bâtons)" style="-fx-font-size: 18; -fx-font-weight: bold;"/>
+
+    <HBox spacing="10" alignment="CENTER_LEFT">
+        <Label text="Type:"/>
+        <ChoiceBox fx:id="typeBox" prefWidth="180"/>
+
+        <Label text="Metric:"/>
+        <ChoiceBox fx:id="metricBox" prefWidth="120"/>
+
+        <Label text="De:"/>
+        <DatePicker fx:id="fromPicker"/>
+
+        <Label text="À:"/>
+        <DatePicker fx:id="toPicker"/>
+
+        <Label text="Top:"/>
+        <TextField fx:id="topField" prefWidth="60" promptText="10"/>
+
+        <Label text="Seuil:"/>
+        <TextField fx:id="seuilField" prefWidth="60" promptText="10"/>
+
+        <Button text="Afficher" onAction="#handleAfficher"/>
+    </HBox>
+
+    <Separator/>
+
+    <BarChart fx:id="barChart" prefHeight="520">
+        <xAxis>
+            <CategoryAxis fx:id="xAxis"/>
+        </xAxis>
+        <yAxis>
+            <NumberAxis fx:id="yAxis"/>
+        </yAxis>
+    </BarChart>
+
+</VBox>

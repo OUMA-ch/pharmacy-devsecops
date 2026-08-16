@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox spacing="10"
+      xmlns="http://javafx.com/javafx/17"
+      xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.salma.pharmacie.frontend.controller.responsable.PharmacienCrudControllerFX">
+
+    <padding>
+        <Insets top="15" right="15" bottom="15" left="15"/>
+    </padding>
+
+    <HBox spacing="10" alignment="CENTER_LEFT">
+        <Label text="Gestion des Pharmaciens" style="-fx-font-size: 18; -fx-font-weight: bold;"/>
+        <Region HBox.hgrow="ALWAYS"/>
+
+        <Button text="Actualiser" onAction="#loadPharmaciens"/>
+        <Button text="Ajouter" onAction="#handleAdd" style="-fx-background-color: #2ecc71; -fx-text-fill: white;"/>
+    </HBox>
+
+    <TableView fx:id="table" VBox.vgrow="ALWAYS">
+        <columns>
+            <TableColumn fx:id="idCol" text="ID" prefWidth="70"/>
+            <TableColumn fx:id="nomCol" text="Nom" prefWidth="160"/>
+            <TableColumn fx:id="emailCol" text="Email" prefWidth="220"/>
+            <TableColumn fx:id="telCol" text="Téléphone" prefWidth="140"/>
+            <TableColumn fx:id="roleCol" text="Role" prefWidth="120"/>
+            <TableColumn fx:id="actionsCol" text="Actions" prefWidth="180"/>
+        </columns>
+    </TableView>
+
+</VBox>

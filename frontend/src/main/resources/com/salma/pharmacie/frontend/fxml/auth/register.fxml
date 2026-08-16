@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns="http://javafx.com/javafx/17"
+      xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.salma.pharmacie.frontend.controller.auth.RegisterController"
+      alignment="CENTER" spacing="12" prefWidth="450" prefHeight="360">
+
+    <padding>
+        <Insets top="20" right="20" bottom="20" left="20"/>
+    </padding>
+
+    <Label text="Inscription Client" style="-fx-font-size: 22; -fx-font-weight: bold;"/>
+
+    <TextField fx:id="nomField" promptText="Nom"/>
+    <TextField fx:id="emailField" promptText="Email"/>
+    <TextField fx:id="telephoneField" promptText="Téléphone"/>
+    <PasswordField fx:id="passwordField" promptText="Mot de passe"/>
+
+    <Button text="Créer mon compte"
+            onAction="#handleRegister"
+            prefWidth="200"
+            style="-fx-background-color: #2ecc71; -fx-text-fill: white;"/>
+
+    <Hyperlink text="Retour connexion" onAction="#goToLogin"/>
+
+    <Label fx:id="infoLabel" textFill="red"/>
+
+</VBox>

@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox spacing="14"
+      xmlns="http://javafx.com/javafx/17"
+      xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.salma.pharmacie.frontend.controller.client.NotificationsControllerFX"
+      style="-fx-background-color: white;">
+
+    <padding>
+        <Insets top="20" right="25" bottom="20" left="25"/>
+    </padding>
+
+    <!-- Ligne titre + compteurs + rafraîchir -->
+    <HBox alignment="CENTER_LEFT" spacing="12">
+        <Label text="Notifications" style="-fx-font-size: 22; -fx-font-weight: bold; -fx-text-fill: #1b1f3b;"/>
+        <Region HBox.hgrow="ALWAYS"/>
+        <Label fx:id="countLabel" text="Total: 0 • Non lues: 0"
+               style="-fx-font-size: 13; -fx-text-fill: #888888;"/>
+        <Button text="Rafraîchir" onAction="#loadNotifications"
+                style="-fx-background-color: #e8ecfb; -fx-text-fill: #3b6ef6; -fx-font-weight: bold; -fx-background-radius: 6; -fx-padding: 6 14;"/>
+    </HBox>
+
+    <!-- Ligne recherche + filtre -->
+    <HBox alignment="CENTER_LEFT" spacing="10">
+        <TextField fx:id="searchField" promptText="Rechercher (titre ou message)..."
+                   HBox.hgrow="ALWAYS" style="-fx-background-radius: 6; -fx-padding: 8;"/>
+        <Button text="Rechercher" onAction="#search"
+                style="-fx-background-color: #3b6ef6; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 6; -fx-padding: 8 18;"/>
+        <CheckBox fx:id="unreadOnlyCheck" text="Non lues" onAction="#toggleUnreadFilter"/>
+    </HBox>
+
+    <TableView fx:id="table" VBox.vgrow="ALWAYS" style="-fx-background-color: transparent;">
+        <columns>
+            <TableColumn fx:id="titreCol" text="Titre" prefWidth="180"/>
+            <TableColumn fx:id="messageCol" text="Message" prefWidth="520"/>
+            <TableColumn fx:id="dateCol" text="Date" prefWidth="180"/>
+        </columns>
+    </TableView>
+
+</VBox>

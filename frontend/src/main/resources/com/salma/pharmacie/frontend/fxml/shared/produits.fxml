@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+
+<VBox spacing="10" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" 
+      fx:controller="com.salma.pharmacie.frontend.controller.shared.ProduitController">
+    <padding>
+        <Insets top="20" right="20" bottom="20" left="20"/>
+    </padding>
+
+    <HBox spacing="10" alignment="CENTER_LEFT">
+        <Label text="Gestion des Produits" style="-fx-font-size: 20; -fx-font-weight: bold;"/>
+        <Region HBox.hgrow="ALWAYS" />
+        <Button text="Actualiser" onAction="#loadProduits" />
+        <Button text="Ajouter" onAction="#handleAddProduit" style="-fx-background-color: #2ecc71; -fx-text-fill: white;"/>
+    </HBox>
+
+    <TableView fx:id="produitTable" VBox.vgrow="ALWAYS">
+        <columns>
+            <TableColumn fx:id="idCol" text="ID" prefWidth="50"/>
+            <TableColumn fx:id="nomCol" text="Nom" prefWidth="150"/>
+            <TableColumn fx:id="descriptionCol" text="Description" prefWidth="200"/>
+            <TableColumn fx:id="prixCol" text="Prix" prefWidth="100"/>
+            <TableColumn fx:id="datePeremptionCol" text="Date péremption" prefWidth="130"/>
+            <TableColumn fx:id="stockCol" text="Stock" prefWidth="100"/>
+            <TableColumn fx:id="actionsCol" text="Actions" prefWidth="150"/>
+        </columns>
+    </TableView>
+</VBox>
