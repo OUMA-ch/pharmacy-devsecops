@@ -63,7 +63,7 @@ jobs:
         run: docker build -t pharmacy-backend:${{ github.sha }} .
 
       - name: Scanner l'image avec Trivy (vulnérabilités critiques et hautes)
-        uses: aquasecurity/trivy-action@0.24.0
+        uses: aquasecurity/trivy-action@0.35.0
         with:
           image-ref: 'pharmacy-backend:${{ github.sha }}'
           format: 'table'
