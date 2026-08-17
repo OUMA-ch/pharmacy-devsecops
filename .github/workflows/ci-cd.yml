@@ -1,0 +1,45 @@
+name: CI - Build and Test
+
+on:
+  push:
+    branches: [ develop, main ]
+  pull_request:
+    branches: [ develop, main ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: 2130
+          MYSQL_DATABASE: gestion_pharmacie
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=10
+
+    steps:
+      - name: Récupérer le code
+        uses: actions/checkout@v4
+
+      - name: Installer Java 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Compiler et tester l'application
+        working-directory: ./backend
+        run: mvn clean verify
+        env:
+          DB_HOST: localhost
+          DB_PORT: 3306
+          DB_NAME: gestion_pharmacie
+          DB_USER: root
+          DB_PASSWORD: 2130
