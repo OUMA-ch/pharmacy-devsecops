@@ -1,4 +1,4 @@
-name: CI - Build and Test
+name: CI - Build, Test, Quality and Security
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
     branches: [ develop, main ]
 
 jobs:
-  build-and-test:
+  build-test-quality:
     runs-on: ubuntu-latest
 
     services:
@@ -34,7 +34,15 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Compiler et tester l'application
+      - name: Cache des dépendances Maven
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
+
+      - name: Compiler, tester et vérifier la couverture (JaCoCo)
         working-directory: ./backend
         run: mvn clean verify
         env:
@@ -43,3 +51,38 @@ jobs:
           DB_NAME: gestion_pharmacie
           DB_USER: root
           DB_PASSWORD: 2130
+
+      - name: Publier le rapport de couverture JaCoCo
+        uses: actions/upload-artifact@v4
+        with:
+          name: rapport-couverture-jacoco
+          path: backend/target/site/jacoco/
+
+      - name: Construire l'image Docker
+        working-directory: ./backend
+        run: docker build -t pharmacy-backend:${{ github.sha }} .
+
+      - name: Scanner l'image avec Trivy (vulnérabilités critiques et hautes)
+        uses: aquasecurity/trivy-action@0.24.0
+        with:
+          image-ref: 'pharmacy-backend:${{ github.sha }}'
+          format: 'table'
+          severity: 'CRITICAL,HIGH'
+          exit-code: '1'
+
+      - name: Scanner l'image avec Trivy (rapport complet, informatif)
+        uses: aquasecurity/trivy-action@0.24.0
+        if: always()
+        with:
+          image-ref: 'pharmacy-backend:${{ github.sha }}'
+          format: 'table'
+          severity: 'LOW,MEDIUM,CRITICAL,HIGH'
+          exit-code: '0'
+          output: 'trivy-full-report.txt'
+
+      - name: Publier le rapport Trivy complet
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rapport-trivy-complet
+          path: trivy-full-report.txt
