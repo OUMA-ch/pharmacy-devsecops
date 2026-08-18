@@ -82,6 +82,20 @@ jobs:
           output: 'trivy-full-report.txt'
           trivyignores: 'backend/.trivyignore'
 
+      - name: Connexion à Docker Hub
+        if: github.ref == 'refs/heads/main'
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Tag et publication de l'image sur Docker Hub
+        if: github.ref == 'refs/heads/main'
+        run: |
+          docker tag pharmacy-backend:${{ github.sha }} ${{ secrets.DOCKERHUB_USERNAME }}/pharmacy-backend:${{ github.sha }}
+          docker tag pharmacy-backend:${{ github.sha }} ${{ secrets.DOCKERHUB_USERNAME }}/pharmacy-backend:latest
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/pharmacy-backend:${{ github.sha }}
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/pharmacy-backend:latest
       - name: Publier le rapport Trivy complet
         if: always()
         uses: actions/upload-artifact@v4
