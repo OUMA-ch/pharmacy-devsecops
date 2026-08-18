@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  database:
+    image: mysql:8.0
+    container_name: pharmacy-db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: 2130
+      MYSQL_DATABASE: gestion_pharmacie
+    ports:
+      - "3307:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p2130"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build: ./backend
+    container_name: pharmacy-backend
+    restart: always
+    depends_on:
+      database:
+        condition: service_healthy
+    environment:
+      DB_HOST: database
+      DB_PORT: 3306
+      DB_NAME: gestion_pharmacie
+      DB_USER: root
+      DB_PASSWORD: 2130
+    ports:
+      - "8080:8080"
+
+volumes:
+  db_data:
