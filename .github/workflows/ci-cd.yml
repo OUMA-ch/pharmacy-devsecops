@@ -69,6 +69,7 @@ jobs:
           format: 'table'
           severity: 'CRITICAL,HIGH'
           exit-code: '1'
+          trivyignores: 'backend/.trivyignore'
 
       - name: Scanner l'image avec Trivy (rapport complet, informatif)
         uses: aquasecurity/trivy-action@0.35.0
@@ -79,6 +80,7 @@ jobs:
           severity: 'LOW,MEDIUM,CRITICAL,HIGH'
           exit-code: '0'
           output: 'trivy-full-report.txt'
+          trivyignores: 'backend/.trivyignore'
 
       - name: Publier le rapport Trivy complet
         if: always()

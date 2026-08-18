@@ -1,0 +1,17 @@
+# Fichier .trivyignore - Politique d'acceptation de risque documentée
+# Projet PFA DevSecOps - Application pharmacie
+# Date : 18/08/2026
+
+# Vulnérabilités liées à des versions mineures non encore disponibles
+# dans le BOM Spring Boot 4.0.6 au moment du projet.
+# Écart d'une seule version mineure sur chaque composant (ex: 1.16.5 -> 1.16.6).
+# Risque jugé faible (DoS nécessitant des conditions spécifiques, pas d'exécution
+# de code à distance sans condition). A réévaluer à la prochaine mise a jour du BOM.
+
+CVE-2026-40983
+CVE-2026-40984
+CVE-2026-41695
+CVE-2026-41716
+GHSA-r7wm-3cxj-wff9
+CVE-2026-54512
+CVE-2026-54513
