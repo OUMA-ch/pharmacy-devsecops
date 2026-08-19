@@ -52,6 +52,7 @@ jobs:
           DB_NAME: gestion_pharmacie
           DB_USER: postgres
           DB_PASSWORD: 2130
+          DB_SSLMODE: disable
 
       - name: Publier le rapport de couverture JaCoCo
         uses: actions/upload-artifact@v4
