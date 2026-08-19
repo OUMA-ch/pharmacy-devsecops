@@ -47,9 +47,9 @@ jobs:
         run: mvn clean verify
         env:
           DB_HOST: localhost
-          DB_PORT: 3306
+          DB_PORT: 5432
           DB_NAME: gestion_pharmacie
-          DB_USER: root
+          DB_USER: postgres
           DB_PASSWORD: 2130
           DB_SSLMODE: disable
 
