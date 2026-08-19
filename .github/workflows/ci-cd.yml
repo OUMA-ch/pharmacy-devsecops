@@ -11,15 +11,16 @@ jobs:
     runs-on: ubuntu-latest
 
     services:
-      mysql:
-        image: mysql:8.0
+      postgres:
+        image: postgres:16
         env:
-          MYSQL_ROOT_PASSWORD: 2130
-          MYSQL_DATABASE: gestion_pharmacie
+          POSTGRES_DB: gestion_pharmacie
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: 2130
         ports:
-          - 3306:3306
+          - 5432:5432
         options: >-
-          --health-cmd="mysqladmin ping -h localhost"
+          --health-cmd="pg_isready -U postgres"
           --health-interval=5s
           --health-timeout=5s
           --health-retries=10
@@ -47,9 +48,9 @@ jobs:
         run: mvn clean verify
         env:
           DB_HOST: localhost
-          DB_PORT: 3306
+          DB_PORT: 5432
           DB_NAME: gestion_pharmacie
-          DB_USER: root
+          DB_USER: postgres
           DB_PASSWORD: 2130
 
       - name: Publier le rapport de couverture JaCoCo
@@ -79,8 +80,8 @@ jobs:
           format: 'table'
           severity: 'LOW,MEDIUM,CRITICAL,HIGH'
           exit-code: '0'
-          output: 'trivy-full-report.txt'
           trivyignores: 'backend/.trivyignore'
+          output: 'trivy-full-report.txt'
 
       - name: Connexion à Docker Hub
         if: github.ref == 'refs/heads/master'
@@ -96,6 +97,7 @@ jobs:
           docker tag pharmacy-backend:${{ github.sha }} ${{ secrets.DOCKERHUB_USERNAME }}/pharmacy-backend:latest
           docker push ${{ secrets.DOCKERHUB_USERNAME }}/pharmacy-backend:${{ github.sha }}
           docker push ${{ secrets.DOCKERHUB_USERNAME }}/pharmacy-backend:latest
+
       - name: Publier le rapport Trivy complet
         if: always()
         uses: actions/upload-artifact@v4
