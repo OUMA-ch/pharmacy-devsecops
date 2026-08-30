@@ -54,6 +54,17 @@ jobs:
           DB_PASSWORD: 2130
           DB_SSLMODE: disable
 
+      - name: Analyse SonarCloud
+        working-directory: ./backend
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: >
+          mvn sonar:sonar
+          -Dsonar.projectKey=OUMA-ch_pharmacy-devsecops
+          -Dsonar.organization=ouma-ch
+          -Dsonar.host.url=https://sonarcloud.io
+
       - name: Publier le rapport de couverture JaCoCo
         uses: actions/upload-artifact@v4
         with:
