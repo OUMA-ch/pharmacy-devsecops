@@ -54,6 +54,12 @@ jobs:
           DB_PASSWORD: 2130
           DB_SSLMODE: disable
 
+      - name: Installer Java 21 pour SonarCloud
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
       - name: Analyse SonarCloud
         working-directory: ./backend
         env:
