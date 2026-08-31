@@ -11,5 +11,29 @@ services:
       DB_NAME: neondb
       DB_USER: neondb_owner
       DB_PASSWORD: npg_DGNE8HOfcJi0
+      DB_SSLMODE: require
     ports:
       - "8080:8080"
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: pharmacy-prometheus
+    restart: always
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9091:9090"
+    depends_on:
+      - backend
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: pharmacy-grafana
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+    depends_on:
+      - prometheus
