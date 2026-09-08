@@ -10,7 +10,7 @@ services:
       DB_PORT: 5432
       DB_NAME: neondb
       DB_USER: neondb_owner
-      DB_PASSWORD: npg_DGNE8HOfcJi0
+      DB_PASSWORD: ${DB_PASSWORD}
       DB_SSLMODE: require
     ports:
       - "8080:8080"
