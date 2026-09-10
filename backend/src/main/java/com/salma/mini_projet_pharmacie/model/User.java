@@ -1,5 +1,6 @@
 package com.salma.mini_projet_pharmacie.model;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 
 @Entity
@@ -18,6 +19,12 @@ public abstract class User {
     @Column(name = "email", unique = true, nullable = false)
     private String email;
 
+    // Plusieurs endpoints (POST /users/register, GET/POST /pharmaciens) renvoient
+    // l'entite User/Client/Pharmacien directement, sans DTO de sortie dedie.
+    // WRITE_ONLY : le JSON entrant peut toujours definir le mot de passe (inscription,
+    // creation/modification pharmacien), mais il ne sera plus jamais renvoye dans une
+    // reponse (auparavant le mot de passe en clair, puis le hash BCrypt, y figuraient).
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     @Column(name = "password", nullable = false)
     private String password;
 

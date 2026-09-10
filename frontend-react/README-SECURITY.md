@@ -35,28 +35,53 @@ d'authentification (qui est dans le cookie, invisible en JS). `ProtectedRoute` r
 une garde de route, mais son rôle est maintenant clairement UX (éviter un flash de
 contenu interdit) et non plus le seul rempart.
 
+## 1bis. Mots de passe BCrypt + correctif IDOR (mis à jour)
+
+Les deux points ouverts de la section précédente sont désormais résolus :
+
+- **Mots de passe hachés (BCrypt)** : `SecurityConfig` expose un bean
+  `PasswordEncoder` (`BCryptPasswordEncoder`). `AuthService.login()` vérifie via
+  `passwordEncoder.matches(...)` (plus de comparaison en clair) ; `UserService.registerClient()`
+  et `PharmacienCrudService.create()/update()` hachent le mot de passe avant sauvegarde.
+  **Migration des comptes existants** : `security/PasswordMigrationRunner.java`
+  (`ApplicationRunner`) parcourt tous les `User` au démarrage et rehache en place tout
+  mot de passe qui n'a pas déjà le format BCrypt (`$2a$/$2b$/$2y$...`) — le mot de passe
+  reste le même pour l'utilisateur, seul son stockage change. Idempotent (sans effet aux
+  démarrages suivants une fois tous les comptes migrés). **Validé en conditions réelles**
+  sur la base Neon : migration exécutée (log "N compte(s) migré(s) vers BCrypt"), login
+  toujours fonctionnel avec l'ancien mot de passe en clair, mauvais mot de passe toujours
+  rejeté (401).
+- **Fuite du mot de passe dans les réponses API corrigée en même temps** : `POST /users/register`
+  et les endpoints `/pharmaciens` renvoient l'entité directement (pas de DTO de sortie
+  dédié) et incluaient donc le mot de passe (en clair, puis le hash BCrypt) dans le JSON
+  de réponse. `User.password` porte maintenant `@JsonProperty(access = WRITE_ONLY)` :
+  toujours accepté en entrée, plus jamais renvoyé en sortie. Vérifié : la réponse
+  d'inscription ne contient plus la clé `password`.
+- **IDOR sur `/notifications/client/{id}` corrigé** : `JwtAuthFilter` peuple un principal
+  `AuthenticatedUser(uid, email, role)` à partir du claim `uid` du JWT.
+  `NotificationController` porte `@PreAuthorize("hasAnyRole('PHARMACIEN','RESPONSABLE') or #id == principal.uid()")`
+  sur les deux endpoints `/client/{id}` et `/client/{id}/search` : le personnel peut
+  toujours consulter n'importe quel client, mais un `CLIENT` ne peut consulter que ses
+  propres notifications (403 sinon). Un `@ExceptionHandler(AccessDeniedException.class)`
+  dédié a été ajouté à `GlobalExceptionHandler` pour que ce refus remonte en 403 JSON
+  cohérent plutôt qu'en 400 générique. Vérifié en conditions réelles : un client peut lire
+  ses propres notifications (200) et se voit refuser celles d'un autre (403).
+- **Bonus découvert en testant** : `GlobalExceptionHandler` importait par erreur
+  `org.springframework.security.authentication.BadCredentialsException` (classe Spring
+  Security) au lieu de `com.salma.mini_projet_pharmacie.exception.BadCredentialsException`
+  (celle réellement levée par `AuthService`) — un mot de passe incorrect remontait donc en
+  400 générique au lieu de 401. Corrigé (import supprimé, résolution vers la classe du
+  même package).
+
 **Ce qui reste un choix assumé, pas un oubli :**
 
-- **IDOR résiduel sur les ressources scoped-client** : `GET /notifications/client/{id}`,
-  `/ventes/client/{id}`, `/ordonnances/client/{id}` vérifient le **rôle** (`CLIENT` a le
-  droit d'appeler `/notifications/**`) mais pas que `{id}` correspond bien au `uid` du
-  JWT appelant. Un CLIENT authentifié peut donc, en théorie, lire les notifications
-  d'un autre client en changeant l'ID dans l'URL. Ce n'est pas ce qui était demandé
-  dans le plan de remédiation (RBAC par rôle, "seule source de vérité" au niveau de la
-  liste d'autorisation par route) ; corriger ceci demanderait une vérification
-  d'appartenance par endpoint (comparer `claims.get("uid")` à l'ID du chemin), non
-  implémentée ici pour rester dans le périmètre demandé. **Recommandation forte** de
-  traiter ce point ensuite.
-- **Mots de passe en clair en base** (`AuthService.login` : comparaison directe
-  `user.getPassword().equals(...)`, confirmé aussi dans `PharmacienCrudService`).
-  Non traité dans cette remédiation : migrer vers `BCryptPasswordEncoder` nécessite de
-  rehacher les mots de passe existants en base (migration de données), ce qui est un
-  chantier distinct du JWT/RBAC demandé ici. À planifier en priorité juste après.
 - **Refresh token** : non implémenté. Le JWT expire après 1h (`security.jwt.expiration-ms`)
   et l'utilisateur doit se reconnecter — acceptable pour ce périmètre, mais une vraie
   UX de production voudrait un refresh token à rotation (cookie séparé).
 - **Rate limiting** sur `/auth/login` : toujours absent (aucune protection anti
   brute-force). À ajouter (ex. bucket4j, ou au niveau reverse-proxy).
+- **Coût BCrypt** : `BCryptPasswordEncoder()` par défaut (force 10). Un audit de charge
+  pourrait ajuster ce facteur selon la capacité serveur réelle.
 
 ## 2. Protection XSS
 
@@ -132,17 +157,17 @@ mise à jour majeure non validée dans le cadre de cette livraison.
 
 ## 8. Points restants à valider côté backend
 
-Résolu par la remédiation JWT/RBAC (section 1) : émission d'un vrai token de session,
-autorisation par rôle appliquée côté serveur, CORS restreint à une liste d'origines
-explicite avec `allowCredentials(true)` (`app.cors.allowed-origins`, voir
-`backend/.../WebConfig.java`).
+Résolu :
+- Émission d'un vrai token de session, autorisation par rôle appliquée côté serveur,
+  CORS restreint à une liste d'origines explicite avec `allowCredentials(true)`
+  (`app.cors.allowed-origins`, voir `backend/.../WebConfig.java`) — remédiation JWT/RBAC
+  (section 1).
+- Mots de passe hachés BCrypt (inscription, création/modification pharmacien, connexion)
+  + migration automatique des comptes existants ; IDOR sur `/notifications/client/{id}`
+  corrigé par vérification d'appartenance (`uid` du JWT) — voir section 1bis.
 
 Reste ouvert :
 
-- IDOR résiduel sur les ressources scoped-client (voir section 1) — vérification
-  d'appartenance par endpoint (`uid` du JWT vs ID du chemin) non implémentée.
-- Mots de passe stockés en clair en base — migration `BCryptPasswordEncoder` avec
-  rehachage des comptes existants, non traitée ici (chantier distinct).
 - Refresh token / durée de session glissante — actuellement expiration fixe 1h.
 - Message métier dédié pour l'échec de suppression d'un fournisseur référencé (à
   l'image de ce qui existe déjà pour les produits dans `ProduitService`), pour éviter

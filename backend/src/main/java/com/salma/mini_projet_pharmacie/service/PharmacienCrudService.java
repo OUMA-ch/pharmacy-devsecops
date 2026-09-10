@@ -5,6 +5,7 @@ import com.salma.mini_projet_pharmacie.model.Pharmacien;
 import com.salma.mini_projet_pharmacie.model.Role;
 import com.salma.mini_projet_pharmacie.repository.PharmacienRepository;
 import com.salma.mini_projet_pharmacie.repository.UserRepository;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -14,10 +15,13 @@ public class PharmacienCrudService {
 
     private final PharmacienRepository pharmacienRepository;
     private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
-    public PharmacienCrudService(PharmacienRepository pharmacienRepository, UserRepository userRepository) {
+    public PharmacienCrudService(PharmacienRepository pharmacienRepository, UserRepository userRepository,
+                                  PasswordEncoder passwordEncoder) {
         this.pharmacienRepository = pharmacienRepository;
         this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     public List<Pharmacien> getAll() {
@@ -38,7 +42,7 @@ public class PharmacienCrudService {
         Pharmacien p = new Pharmacien();
         p.setNomUser(dto.getNomUser());
         p.setEmail(dto.getEmail().trim());
-        p.setPassword(dto.getPassword());     // (en clair pour matcher ton login actuel)
+        p.setPassword(passwordEncoder.encode(dto.getPassword()));
         p.setTele(dto.getTele());
         p.setRole(Role.PHARMACIEN);
 
@@ -65,7 +69,7 @@ public class PharmacienCrudService {
 
         // Password: si rempli -> update
         if (dto.getPassword() != null && !dto.getPassword().isBlank()) {
-            p.setPassword(dto.getPassword());
+            p.setPassword(passwordEncoder.encode(dto.getPassword()));
         }
 
         return pharmacienRepository.save(p);

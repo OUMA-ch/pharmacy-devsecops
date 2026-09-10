@@ -2,6 +2,7 @@ package com.salma.mini_projet_pharmacie.controller;
 
 import com.salma.mini_projet_pharmacie.model.Notification;
 import com.salma.mini_projet_pharmacie.service.NotificationService;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -16,11 +17,16 @@ public class NotificationController {
         this.notificationService = notificationService;
     }
 
+    // Un CLIENT ne peut consulter que ses propres notifications (IDOR) : {id}
+    // doit correspondre au uid du JWT, sauf pour le personnel (PHARMACIEN/
+    // RESPONSABLE) qui peut consulter celles de n'importe quel client.
+    @PreAuthorize("hasAnyRole('PHARMACIEN','RESPONSABLE') or #id == principal.uid()")
     @GetMapping("/client/{id}")
     public List<Notification> list(@PathVariable Integer id) {
         return notificationService.notificationsClient(id);
     }
 
+    @PreAuthorize("hasAnyRole('PHARMACIEN','RESPONSABLE') or #id == principal.uid()")
     @GetMapping("/client/{id}/search")
     public List<Notification> search(
             @PathVariable Integer id,

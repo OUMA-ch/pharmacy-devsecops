@@ -8,6 +8,7 @@ import com.salma.mini_projet_pharmacie.mapper.UserMapper;
 import com.salma.mini_projet_pharmacie.model.User;
 import com.salma.mini_projet_pharmacie.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -16,6 +17,7 @@ public class AuthService {
 
     private final UserRepository userRepository;
     private final UserMapper userMapper;
+    private final PasswordEncoder passwordEncoder;
 
     public UserResponseDTO login(LoginRequestDTO request) {
 
@@ -24,7 +26,7 @@ public class AuthService {
                         new UserNotFoundException("Utilisateur introuvable")
                 );
 
-        if (!user.getPassword().equals(request.getPassword())) {
+        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
             throw new BadCredentialsException("Mot de passe incorrect");
         }
 
