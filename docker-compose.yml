@@ -12,6 +12,14 @@ services:
       DB_USER: neondb_owner
       DB_PASSWORD: ${DB_PASSWORD}
       DB_SSLMODE: require
+      # JWT_SECRET est obligatoire (aucune valeur par defaut, voir README-SECURITY.md
+      # du backend) : generer avec `openssl rand -base64 32` et exporter avant de
+      # lancer `docker-compose up`.
+      JWT_SECRET: ${JWT_SECRET}
+      # Backend/frontend testes en HTTP simple en local : cookie Secure desactive.
+      # Remettre a "true" (ou retirer, c'est deja la valeur par defaut) en production HTTPS.
+      SECURITY_COOKIE_SECURE: ${SECURITY_COOKIE_SECURE:-false}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:5173,http://localhost:8080,http://localhost:3000}
     ports:
       - "8080:8080"
 
