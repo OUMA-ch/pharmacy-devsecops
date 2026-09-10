@@ -3,6 +3,10 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- Injecte par le build Docker (voir Dockerfile) : sert a confirmer dans
+         DevTools/view-source que le navigateur charge bien le dernier build,
+         pas une version en cache. -->
+    <meta name="build-time" content="__BUILD_TIME__" />
     <title>PharmaHOSS</title>
   </head>
   <body>

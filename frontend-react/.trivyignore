@@ -1,0 +1,6 @@
+# Fichier .trivyignore - Politique d'acceptation de risque documentée
+# Projet PFA DevSecOps - Application pharmacie (image frontend)
+
+# Aucune exception acceptee pour le moment : ajouter ici, avec justification en
+# commentaire, tout CVE/GHSA a exclure du scan bloquant (voir backend/.trivyignore
+# pour l'exemple de format).

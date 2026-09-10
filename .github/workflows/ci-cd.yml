@@ -127,3 +127,56 @@ jobs:
         with:
           name: rapport-trivy-complet
           path: trivy-full-report.txt
+
+      - name: Installer Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend-react/package-lock.json
+
+      - name: Installer les dépendances frontend
+        working-directory: ./frontend-react
+        run: npm ci
+
+      - name: Audit des dépendances npm de production (frontend)
+        # --omit=dev : les vulnerabilites des devDependencies (vite/vitest, outils
+        # de build) ne concernent pas le code expedie dans l'image Docker finale
+        # (nginx + bundle statique) - elles sont deja couvertes differemment par
+        # le scan Trivy de l'image ci-dessous. Sans --omit=dev, cette etape
+        # echouerait des maintenant sur des CVE vite/vitest qui n'affectent pas
+        # les utilisateurs de l'app (a corriger separement, via mise a jour de
+        # ces outils, sans lien avec la securite runtime).
+        working-directory: ./frontend-react
+        run: npm audit --omit=dev --audit-level=high
+
+      - name: Construire l'image Docker du frontend
+        working-directory: ./frontend-react
+        run: docker build -t pharmacy-frontend:${{ github.sha }} .
+
+      - name: Scanner l'image frontend avec Trivy (vulnérabilités critiques et hautes)
+        uses: aquasecurity/trivy-action@0.35.0
+        with:
+          image-ref: 'pharmacy-frontend:${{ github.sha }}'
+          format: 'table'
+          severity: 'CRITICAL,HIGH'
+          exit-code: '1'
+          trivyignores: 'frontend-react/.trivyignore'
+
+      - name: Scanner l'image frontend avec Trivy (rapport complet, informatif)
+        uses: aquasecurity/trivy-action@0.35.0
+        if: always()
+        with:
+          image-ref: 'pharmacy-frontend:${{ github.sha }}'
+          format: 'table'
+          severity: 'LOW,MEDIUM,CRITICAL,HIGH'
+          exit-code: '0'
+          trivyignores: 'frontend-react/.trivyignore'
+          output: 'trivy-frontend-full-report.txt'
+
+      - name: Publier le rapport Trivy complet (frontend)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rapport-trivy-complet-frontend
+          path: trivy-frontend-full-report.txt

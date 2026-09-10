@@ -16,8 +16,22 @@ ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
 
 RUN npm run build
 
+# Horodatage reel du build (UTC), injecte dans index.html a la place de
+# __BUILD_TIME__ : permet de confirmer via view-source/DevTools qu'un
+# navigateur charge bien ce build precis et non une version en cache.
+RUN BUILD_TIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ") && \
+    sed -i "s/__BUILD_TIME__/$BUILD_TIME/" /app/dist/index.html
+
 # ---- Etape 2 : service statique ----
 FROM nginx:alpine
+# L'image nginx:alpine publiee embarque parfois un util-linux/libuuid plus
+# ancien que le correctif Alpine deja disponible (vu via scan Trivy : CVE
+# HIGH sur libuuid, "Fixed Version" annoncee mais pas encore dans l'image
+# de base). On force la mise a jour des paquets systeme au lieu d'ignorer
+# ces CVE, pour rester patché meme si l'image officielle tarde a etre
+# republiee.
+RUN apk update && apk upgrade --no-cache
+
 COPY --from=build /app/dist /usr/share/nginx/html
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
