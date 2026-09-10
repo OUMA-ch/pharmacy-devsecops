@@ -106,6 +106,13 @@
             <scope>runtime</scope>
         </dependency>
 
+        <!-- Rate limiting (protection brute-force sur /auth/login, voir security/RateLimitingFilter) -->
+        <dependency>
+            <groupId>com.bucket4j</groupId>
+            <artifactId>bucket4j-core</artifactId>
+            <version>8.10.1</version>
+        </dependency>
+
         <!-- Monitoring Prometheus -->
         <dependency>
             <groupId>io.micrometer</groupId>

@@ -165,6 +165,18 @@ Résolu :
 - Mots de passe hachés BCrypt (inscription, création/modification pharmacien, connexion)
   + migration automatique des comptes existants ; IDOR sur `/notifications/client/{id}`
   corrigé par vérification d'appartenance (`uid` du JWT) — voir section 1bis.
+- **Rate limiting sur `/auth/login`** : `security/RateLimitingFilter.java` (Bucket4j)
+  limite à 5 tentatives par minute et par IP (identifiée via `req.getRemoteAddr()`),
+  au-delà réponse `429` + en-tête `Retry-After: 60`, avant même la vérification des
+  identifiants. Compteurs en mémoire (`ConcurrentHashMap`, un bucket par IP, jamais
+  purgé) : suffisant pour l'instance unique déployée ici — une architecture
+  multi-nœuds ou une très forte volumétrie d'IP distinctes voudrait un stockage
+  partagé avec expiration (Redis, Caffeine). Si un reverse-proxy est introduit devant
+  le backend, `clientIp()` devra lire `X-Forwarded-For` en ne faisant confiance qu'à ce
+  proxy connu (jamais à l'en-tête brut d'un client, sinon la limite devient triviale à
+  contourner). **Validé en conditions réelles** : 5 tentatives passent, la 6ᵉ et les
+  suivantes reçoivent `429` avec le message et l'en-tête attendus ; les autres routes
+  (`/`, `GET /auth/login`, etc.) restent inaffectées.
 
 Reste ouvert :
 
@@ -172,7 +184,6 @@ Reste ouvert :
 - Message métier dédié pour l'échec de suppression d'un fournisseur référencé (à
   l'image de ce qui existe déjà pour les produits dans `ProduitService`), pour éviter
   de dépendre d'une détection heuristique côté frontend.
-- Rate limiting sur `/auth/login` (aucune protection contre le brute-force constatée).
 - CSRF : `SameSite=Strict` + absence de formulaire HTML classique réduit déjà
   fortement le risque, mais si une requête `GET` produisait un jour un effet de bord,
   ajouter un token CSRF applicatif dédié.
