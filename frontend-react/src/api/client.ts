@@ -1,3 +1,5 @@
+import { clearStoredUser } from "../auth/storage";
+
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8080";
 
 /**
@@ -78,7 +80,16 @@ export async function apiFetch<T>(path: string, options: RequestOptions = {}): P
     ...(optHeaders as Record<string, string> | undefined)
   };
 
-  const init: RequestInit = { ...rest, headers };
+  const init: RequestInit = {
+    // Le JWT de session voyage dans un cookie HttpOnly pose par le backend
+    // (voir AuthController.login) : "include" est necessaire pour qu'il parte
+    // sur les requetes cross-origin (frontend et backend sur des ports/domaines
+    // differents). WebConfig.java restreint allowedOrigins a une liste explicite
+    // car allowCredentials(true) est incompatible avec allowedOrigins("*").
+    credentials: "include",
+    ...rest,
+    headers
+  };
   if (requestBody !== undefined) {
     headers["Content-Type"] = "application/json";
     init.body = JSON.stringify(requestBody);
@@ -111,6 +122,17 @@ export async function apiFetch<T>(path: string, options: RequestOptions = {}): P
     const rawMessage = typeof body === "string" ? body : (errBody.message ?? errBody.error ?? "");
     const userMessage = toSafeUserMessage(rawMessage, res.status);
     console.error(`[api] ${init.method ?? "GET"} ${path} -> ${res.status}`, rawMessage || body);
+
+    // Session expiree/invalide (cookie absent ou JWT perime) : on nettoie l'etat
+    // d'affichage local et on renvoie vers /login. On exclut /auth/login lui-meme
+    // pour ne pas transformer un simple "mot de passe incorrect" en redirection.
+    if (res.status === 401 && !path.startsWith("/auth/login") && typeof window !== "undefined") {
+      clearStoredUser();
+      if (!window.location.pathname.startsWith("/login")) {
+        window.location.href = "/login";
+      }
+    }
+
     throw new ApiError(res.status, userMessage, rawMessage || `HTTP ${res.status}`);
   }
 

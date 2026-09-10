@@ -34,6 +34,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const logout = useCallback(() => {
+    // Invalide le cookie cote serveur ; meme si l'appel echoue (reseau, backend
+    // deja injoignable), on nettoie quand meme l'etat local pour ne jamais
+    // bloquer l'utilisateur sur un ecran protege.
+    authApi.logout().catch(() => {
+      /* deconnexion locale malgre tout, voir commentaire ci-dessus */
+    });
     clearStoredUser();
     setUser(null);
   }, []);

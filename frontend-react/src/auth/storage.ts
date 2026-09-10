@@ -3,16 +3,13 @@ import type { UserResponseDTO } from "../types/api";
 const STORAGE_KEY = "pharmahoss.user";
 
 /**
- * COMPROMIS DE SECURITE DOCUMENTE (voir README-SECURITY.md) :
- * Le backend actuel (AuthController/AuthService) ne delivre aucun token/JWT — il
- * renvoie uniquement { id, nom, email, role } apres verification des identifiants.
- * Il n'y a donc pas de session cote serveur, pas de cookie HttpOnly possible sans
- * modifier le backend (hors perimetre de cette mission). On stocke ce resultat de
- * connexion dans sessionStorage plutot que localStorage : la session ne survit pas
- * a la fermeture de l'onglet, ce qui limite (sans l'annuler) le risque de vol par
- * XSS persistant. Le controle de role applique ci-dessous (ProtectedRoute) est une
- * convention d'affichage frontend uniquement : le backend n'impose aucune
- * autorisation par role sur ses endpoints (SecurityConfig.java autorise tout).
+ * Le JWT de session vit desormais dans un cookie HttpOnly/Secure/SameSite=Strict
+ * pose par le backend (AuthController.login) — il n'est jamais lisible ni
+ * manipulable en JS, donc jamais stocke ici. Ce qui suit dans sessionStorage
+ * n'est QUE la reponse d'affichage { id, nom, email, role } : des donnees non
+ * sensibles qui evitent un flash "non connecte" au rechargement de page, avant
+ * meme le premier appel API. sessionStorage (plutot que localStorage) limite la
+ * duree de vie de cet affichage a l'onglet ouvert. Voir README-SECURITY.md.
  */
 export function readStoredUser(): UserResponseDTO | null {
   try {

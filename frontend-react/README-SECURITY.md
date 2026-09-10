@@ -5,36 +5,58 @@ assumés, et les points qui restent à valider ou corriger côté backend. Rédi
 cadre d'un projet DevSecOps : la transparence sur les limites compte plus que
 l'apparence de conformité.
 
-## 1. Authentification — compromis majeur, à lire en premier
+## 1. Authentification — RBAC appliqué côté serveur (mis à jour)
 
-**Constat backend (vérifié dans le code, non modifiable dans le cadre de cette
-mission)** : `AuthController.login()` / `AuthService` ne délivrent **aucun token**. La
-réponse de connexion est `{ id, nom, email, role }` — un simple résultat de
-vérification d'identifiants, sans session serveur ni JWT. `SecurityConfig.java`
-autorise toutes les requêtes sans authentification (`permitAll()`), et
-`WebConfig.java` accepte le CORS depuis `*` sans restriction.
+**Remédiation appliquée (backend + frontend)** : le compromis "pas de token" décrit
+initialement dans ce document est résolu. `AuthController.login()` délivre désormais
+un **JWT signé** (HMAC-SHA256, `backend/.../security/JwtService.java`), transporté
+dans un cookie `access_token` avec les attributs `HttpOnly`, `SameSite=Strict`, et
+`Secure` (activable via `security.cookie.secure`, `true` par défaut). Chaque requête
+protégée est vérifiée par `JwtAuthFilter`, et **`SecurityConfig.java` applique le RBAC
+par rôle sur chaque endpoint** (`hasRole`/`hasAnyRole` selon les vraies routes
+`/produits`, `/ventes`, `/commandes`, `/fournisseurs`, `/fournitures`, `/ordonnances`,
+`/pharmaciens`, `/reports`, `/notifications`) — **le backend est la seule source de
+vérité pour l'autorisation**, plus seulement l'UI.
 
-**Conséquence directe** : l'exigence "cookie HttpOnly, Secure, SameSite=Strict posé
-par le backend" est **techniquement impossible** sans modifier le backend. Ce
-frontend applique donc le repli explicitement documenté et accepté :
+Vérifié en conditions réelles (backend démarré, appels `curl`) : `POST /auth/login`
+pose bien le cookie ; un appel sans cookie à une route protégée renvoie `401` ; un
+compte `CLIENT` authentifié qui appelle `/produits` ou `/pharmaciens` reçoit `403` ;
+un token corrompu renvoie un `401` propre (pas de `500`) ; le préflight CORS
+(`OPTIONS`) fonctionne pour une origine autorisée et est refusé pour une origine
+inconnue ; `/auth/logout` invalide bien le cookie.
 
-- Le résultat de connexion est stocké dans `sessionStorage` (pas `localStorage`) sous
-  la clé `pharmahoss.user` — voir `src/auth/storage.ts`, commentaire en tête de
-  fichier expliquant ce choix. `sessionStorage` limite la fenêtre d'exposition (la
-  session ne survit pas à la fermeture de l'onglet) mais **ne protège pas contre le
-  vol par XSS** pendant que l'onglet est ouvert — un cookie `HttpOnly` serait
-  strictement supérieur.
-- **Le RBAC (`ProtectedRoute`) est une protection frontend uniquement.** Il empêche un
-  utilisateur normal de naviguer vers une page non autorisée dans l'UI, mais
-  **n'empêche en rien un appel direct à l'API** (`curl`, Postman, etc.) : le backend
-  n'impose aucune autorisation par rôle sur ses endpoints REST. Un client authentifié
-  côté frontend comme "CLIENT" peut, en théorie, appeler `POST /produits` directement
-  contre l'API — rien ne l'en empêche côté serveur.
-- **Recommandation pour la suite** (hors périmètre de cette mission) : le backend
-  devrait a minima (1) émettre un token de session (JWT ou opaque) à la connexion, (2)
-  vérifier ce token sur chaque endpoint protégé, (3) appliquer une autorisation par
-  rôle côté serveur (Spring Security `@PreAuthorize` ou équivalent), (4) restreindre le
-  CORS à l'origine réelle du frontend plutôt que `*`.
+Côté frontend (`src/api/client.ts`) : `credentials: "include"` sur chaque requête
+pour que le cookie parte avec les appels cross-origin, et un intercepteur global sur
+les réponses `401` qui nettoie l'affichage local et renvoie vers `/login` (sauf pour
+`/auth/login` lui-même, pour ne pas transformer un simple mot de passe incorrect en
+redirection). `sessionStorage` (`src/auth/storage.ts`) ne contient plus la moindre
+ambiguïté : uniquement `{ id, nom, email, role }` pour l'affichage, jamais le secret
+d'authentification (qui est dans le cookie, invisible en JS). `ProtectedRoute` reste
+une garde de route, mais son rôle est maintenant clairement UX (éviter un flash de
+contenu interdit) et non plus le seul rempart.
+
+**Ce qui reste un choix assumé, pas un oubli :**
+
+- **IDOR résiduel sur les ressources scoped-client** : `GET /notifications/client/{id}`,
+  `/ventes/client/{id}`, `/ordonnances/client/{id}` vérifient le **rôle** (`CLIENT` a le
+  droit d'appeler `/notifications/**`) mais pas que `{id}` correspond bien au `uid` du
+  JWT appelant. Un CLIENT authentifié peut donc, en théorie, lire les notifications
+  d'un autre client en changeant l'ID dans l'URL. Ce n'est pas ce qui était demandé
+  dans le plan de remédiation (RBAC par rôle, "seule source de vérité" au niveau de la
+  liste d'autorisation par route) ; corriger ceci demanderait une vérification
+  d'appartenance par endpoint (comparer `claims.get("uid")` à l'ID du chemin), non
+  implémentée ici pour rester dans le périmètre demandé. **Recommandation forte** de
+  traiter ce point ensuite.
+- **Mots de passe en clair en base** (`AuthService.login` : comparaison directe
+  `user.getPassword().equals(...)`, confirmé aussi dans `PharmacienCrudService`).
+  Non traité dans cette remédiation : migrer vers `BCryptPasswordEncoder` nécessite de
+  rehacher les mots de passe existants en base (migration de données), ce qui est un
+  chantier distinct du JWT/RBAC demandé ici. À planifier en priorité juste après.
+- **Refresh token** : non implémenté. Le JWT expire après 1h (`security.jwt.expiration-ms`)
+  et l'utilisateur doit se reconnecter — acceptable pour ce périmètre, mais une vraie
+  UX de production voudrait un refresh token à rotation (cookie séparé).
+- **Rate limiting** sur `/auth/login` : toujours absent (aucune protection anti
+  brute-force). À ajouter (ex. bucket4j, ou au niveau reverse-proxy).
 
 ## 2. Protection XSS
 
@@ -108,15 +130,24 @@ Aucune de ces vulnérabilités n'a été ignorée silencieusement : chacune est 
 ici avec sa portée réelle (dev-only vs production) et la raison de ne pas forcer une
 mise à jour majeure non validée dans le cadre de cette livraison.
 
-## 8. Points restants à valider côté backend (hors périmètre de cette mission)
+## 8. Points restants à valider côté backend
 
-- Émission d'un vrai token de session et vérification serveur (voir section 1).
-- Autorisation par rôle appliquée côté serveur, pas seulement côté UI.
-- Restriction du CORS (`WebConfig.java`) à l'origine réelle du frontend plutôt que `*`.
+Résolu par la remédiation JWT/RBAC (section 1) : émission d'un vrai token de session,
+autorisation par rôle appliquée côté serveur, CORS restreint à une liste d'origines
+explicite avec `allowCredentials(true)` (`app.cors.allowed-origins`, voir
+`backend/.../WebConfig.java`).
+
+Reste ouvert :
+
+- IDOR résiduel sur les ressources scoped-client (voir section 1) — vérification
+  d'appartenance par endpoint (`uid` du JWT vs ID du chemin) non implémentée.
+- Mots de passe stockés en clair en base — migration `BCryptPasswordEncoder` avec
+  rehachage des comptes existants, non traitée ici (chantier distinct).
+- Refresh token / durée de session glissante — actuellement expiration fixe 1h.
 - Message métier dédié pour l'échec de suppression d'un fournisseur référencé (à
   l'image de ce qui existe déjà pour les produits dans `ProduitService`), pour éviter
   de dépendre d'une détection heuristique côté frontend.
 - Rate limiting sur `/auth/login` (aucune protection contre le brute-force constatée).
-- Si des cookies d'authentification sont introduits un jour : le CORS `allowedOrigins("*")`
-  actuel devra être remplacé par une liste d'origines explicite, incompatible par
-  nature avec `allowCredentials(true)`.
+- CSRF : `SameSite=Strict` + absence de formulaire HTML classique réduit déjà
+  fortement le risque, mais si une requête `GET` produisait un jour un effet de bord,
+  ajouter un token CSRF applicatif dédié.

@@ -12,9 +12,10 @@ interface ProtectedRouteProps {
  * renvoye vers /403 (jamais un simple masquage de menu : la route elle-meme est
  * protegee, meme en tapant l'URL directement).
  *
- * IMPORTANT : cette garde est une protection cote FRONTEND uniquement. Le backend
- * (SecurityConfig.java) n'applique aujourd'hui aucune autorisation par role sur ses
- * endpoints REST — voir README-SECURITY.md pour le detail de ce compromis.
+ * Cette garde reste une protection UX (evite un flash de contenu interdit / un
+ * aller-retour reseau inutile) : l'autorisation reelle est appliquee cote serveur
+ * par SecurityConfig.java (RBAC Spring Security sur chaque endpoint, base sur le
+ * role signe dans le JWT), qui est la seule source de verite — voir README-SECURITY.md.
  */
 export function ProtectedRoute({ allowedRoles }: ProtectedRouteProps) {
   const { user } = useAuth();

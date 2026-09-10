@@ -72,11 +72,19 @@ Voir le détail complet (endpoints confirmés vs hypothèses) dans la section
 correspondante du message de livraison. Base : aucun endpoint inventé, tout vérifié
 directement dans `backend/src/main/java/.../controller/*.java`.
 
+## Authentification
+
+Le backend émet un JWT signé à la connexion (`POST /auth/login`), transporté dans un
+cookie `HttpOnly`/`SameSite=Strict` — jamais lu ni manipulé par le JS du frontend
+(`credentials: "include"` sur chaque appel API pour qu'il parte automatiquement). Le
+RBAC est appliqué **côté serveur** (`SecurityConfig.java`) sur chaque endpoint ; les
+gardes de route React (`ProtectedRoute`) restent utiles pour l'UX (éviter un flash de
+contenu interdit) mais ne sont plus le seul rempart. Détail complet et points encore
+ouverts (IDOR résiduel, mots de passe en clair, pas de refresh token) dans
+`README-SECURITY.md`.
+
 ## Limites connues (voir aussi README-SECURITY.md)
 
-- **Pas de JWT** : le backend ne délivre aucun token ; l'authentification se limite à
-  une vérification d'identifiants côté serveur. Le RBAC des routes React est une
-  convention frontend uniquement, non appliquée par le backend.
 - **Notifications "lu/non lu"** : aucune route backend ne permet de marquer une
   notification comme lue. Le clic sur une carte la marque visuellement comme lue en
   mémoire locale (non persisté, revient à l'état serveur au rechargement).
