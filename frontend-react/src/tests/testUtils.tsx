@@ -24,11 +24,11 @@ export function renderWithProviders(
   function Wrapper({ children }: { children: ReactNode }) {
     return (
       <QueryClientProvider client={queryClient}>
-        <ToastProvider>
-          <MemoryRouter initialEntries={initialEntries}>
+        <MemoryRouter initialEntries={initialEntries}>
+          <ToastProvider>
             <AuthProvider>{children}</AuthProvider>
-          </MemoryRouter>
-        </ToastProvider>
+          </ToastProvider>
+        </MemoryRouter>
       </QueryClientProvider>
     );
   }

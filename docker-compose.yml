@@ -23,6 +23,22 @@ services:
     ports:
       - "8080:8080"
 
+  frontend:
+    build:
+      context: ./frontend-react
+      args:
+        # Vite integre cette valeur dans le bundle JS au moment du build (pas au
+        # demarrage du container) : c'est l'URL que le NAVIGATEUR de l'utilisateur
+        # doit utiliser pour joindre le backend, donc localhost:8080 (le port publie
+        # ci-dessus), pas un nom d'hote interne au reseau docker-compose.
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:8080}
+    container_name: pharmacy-frontend
+    restart: always
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend
+
   prometheus:
     image: prom/prometheus:latest
     container_name: pharmacy-prometheus

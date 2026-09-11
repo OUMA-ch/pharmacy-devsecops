@@ -5,6 +5,7 @@ import { renderWithProviders } from "../../tests/testUtils";
 import { VenteFormModal } from "./VenteFormModal";
 import * as ventesApi from "../../api/ventes";
 import * as ordonnancesApi from "../../api/ordonnances";
+import { ApiError } from "../../api/client";
 
 vi.mock("../../api/ventes");
 vi.mock("../../api/ordonnances");
@@ -103,5 +104,40 @@ describe("VenteFormModal", () => {
       );
     });
     await waitFor(() => expect(onClose).toHaveBeenCalled());
+  });
+
+  it("affiche le toast d'erreur si le backend refuse l'ordonnance (expirée) apres creation ordonnance+vente", async () => {
+    vi.mocked(ordonnancesApi.createOrdonnance).mockResolvedValue({
+      idOrdonnance: 99,
+      dateEmission: "2025-01-01",
+      nomMedecin: "Dr House",
+      description: "RAS",
+      clientId: 1
+    });
+    vi.mocked(ventesApi.createVente).mockRejectedValue(
+      new ApiError(400, "Ordonnance expirée (plus de 3 mois)", "Ordonnance expirée (plus de 3 mois)")
+    );
+
+    const onClose = vi.fn();
+    const user = userEvent.setup();
+    renderWithProviders(<VenteFormModal open onClose={onClose} />);
+
+    await user.type(screen.getByLabelText(/^Client ID:/), "1");
+    await user.type(screen.getByLabelText(/^Produit ID:/), "5");
+    await user.type(screen.getByLabelText(/^Quantité:/), "3");
+    await user.click(screen.getByLabelText("Avec ordonnance ?"));
+    await user.click(screen.getByRole("button", { name: "Valider" }));
+
+    expect(await screen.findByText("Nouvelle Ordonnance")).toBeInTheDocument();
+
+    await user.type(screen.getByLabelText(/^Médecin:/), "Dr House");
+    await user.type(screen.getByLabelText(/^Date émission:/), "2025-01-01");
+    await user.click(screen.getByRole("button", { name: "Valider" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Ordonnance expirée (plus de 3 mois)"
+    );
+    expect(onClose).not.toHaveBeenCalled();
+    expect(screen.getByText("Nouvelle Ordonnance")).toBeInTheDocument();
   });
 });
