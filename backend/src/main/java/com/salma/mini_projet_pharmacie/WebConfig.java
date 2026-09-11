@@ -3,8 +3,11 @@ package com.salma.mini_projet_pharmacie;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.web.servlet.config.annotation.CorsRegistry;
-import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import java.util.List;
 
 @Configuration
 public class WebConfig {
@@ -16,18 +19,23 @@ public class WebConfig {
     @Value("${app.cors.allowed-origins:http://localhost:5173,http://localhost:8080,http://localhost:3000}")
     private String[] allowedOrigins;
 
+    // Bean branche explicitement dans SecurityConfig via .cors(...) : le CorsFilter
+    // de Spring Security s'execute alors avant les filtres d'authentification et
+    // ajoute les en-tetes CORS meme sur les reponses d'erreur (401/403) ecrites
+    // directement par RestAuthEntryPoints. Avec uniquement une config MVC
+    // (WebMvcConfigurer.addCorsMappings), ces reponses d'erreur partaient sans
+    // Access-Control-Allow-Origin et le navigateur les affichait comme un blocage
+    // CORS, masquant le vrai 401/403.
     @Bean
-    public WebMvcConfigurer corsConfigurer() {
-        return new WebMvcConfigurer() {
-            @Override
-            public void addCorsMappings(CorsRegistry registry) {
-                // Aucun controleur de ce projet n'utilise le prefixe "/api" (voir ProduitController: "/produits"),
-                // le mapping CORS couvre donc toutes les routes exposees par l'application.
-                registry.addMapping("/**")
-                        .allowedOrigins(allowedOrigins)
-                        .allowedMethods("GET", "POST", "PUT", "DELETE")
-                        .allowCredentials(true);
-            }
-        };
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        configuration.setAllowedOrigins(List.of(allowedOrigins));
+        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedHeaders(List.of("*"));
+        configuration.setAllowCredentials(true);
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
+        return source;
     }
 }

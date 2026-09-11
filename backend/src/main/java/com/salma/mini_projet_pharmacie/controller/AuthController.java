@@ -32,6 +32,18 @@ public class AuthController {
     @Value("${security.cookie.secure:true}")
     private boolean cookieSecure;
 
+    // "Strict" par defaut (dev, backend/frontend sur le meme "site" au sens du
+    // navigateur, ex. localhost:5173 -> localhost:8080). En production, quand le
+    // frontend et le backend sont sur des sous-domaines differents d'un domaine
+    // present dans la Public Suffix List (ex. deux services *.onrender.com), le
+    // navigateur les traite comme des sites distincts : SameSite=Strict (et meme
+    // Lax) empeche alors le cookie de voyager sur les appels cross-site du
+    // frontend, meme apres une connexion reussie -> 401 partout. Il faut passer
+    // a "None" via SECURITY_COOKIE_SAMESITE, ce qui exige security.cookie.secure=true
+    // (deja le cas par defaut, obligatoire avec SameSite=None).
+    @Value("${security.cookie.same-site:Strict}")
+    private String cookieSameSite;
+
     @PostMapping("/login")
     public ResponseEntity<UserResponseDTO> login(@RequestBody LoginRequestDTO request) {
         UserResponseDTO user = authService.login(request);
@@ -41,7 +53,7 @@ public class AuthController {
         ResponseCookie cookie = ResponseCookie.from(COOKIE_NAME, token)
                 .httpOnly(true)
                 .secure(cookieSecure)
-                .sameSite("Strict")
+                .sameSite(cookieSameSite)
                 .path("/")
                 .maxAge(Duration.ofMillis(jwtService.expirationMs()))
                 .build();
@@ -56,7 +68,7 @@ public class AuthController {
         ResponseCookie cookie = ResponseCookie.from(COOKIE_NAME, "")
                 .httpOnly(true)
                 .secure(cookieSecure)
-                .sameSite("Strict")
+                .sameSite(cookieSameSite)
                 .path("/")
                 .maxAge(0)
                 .build();

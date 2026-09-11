@@ -15,6 +15,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.http.HttpMethod;
+import org.springframework.web.cors.CorsConfigurationSource;
 
 /**
  * RBAC applique cote serveur — seule source de verite pour l'autorisation
@@ -29,6 +30,7 @@ public class SecurityConfig {
 
     private final JwtAuthFilter jwtAuthFilter;
     private final RateLimitingFilter rateLimitingFilter;
+    private final CorsConfigurationSource corsConfigurationSource;
 
     /** Force de calcul par defaut (10) : compromis eprouve cout CPU / resistance au brute-force. */
     @Bean
@@ -40,7 +42,13 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 
         http
-                // Stateless + cookie SameSite=Strict : le risque CSRF classique (formulaire
+                // Branche le CorsConfigurationSource (WebConfig) dans le filtre Spring
+                // Security lui-meme : sans ca, seule la config MVC s'appliquait et les
+                // reponses 401/403 ecrites directement par RestAuthEntryPoints partaient
+                // sans en-tetes CORS (voir WebConfig.java).
+                .cors(cors -> cors.configurationSource(corsConfigurationSource))
+                // Stateless + cookie SameSite configurable (Strict en dev, None en prod
+                // cross-site, voir AuthController) : le risque CSRF classique (formulaire
                 // HTML tiers) ne s'applique pas ici. A revisiter si un flux avec effets de
                 // bord via GET apparaissait (voir README-SECURITY.md, "points ouverts").
                 .csrf(csrf -> csrf.disable())
