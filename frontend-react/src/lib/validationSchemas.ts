@@ -42,11 +42,19 @@ export const venteSchema = z.object({
 });
 export type VenteFormValues = z.infer<typeof venteSchema>;
 
+// Format ISO strict (AAAA-MM-JJ) uniquement : un format libre type JJ/MM/AAAA
+// est mal interprete par `new Date(...)` (ordre MM/JJ/AAAA en JS) et passait
+// silencieusement la validation cote client pour echouer ensuite cote backend
+// avec une erreur de parsing JSON technique au lieu du message metier attendu
+// (ex: "Ordonnance expiree"). Voir DatePickerField.tsx (champ texte libre).
+const isoDateRegex = /^\d{4}-\d{2}-\d{2}$/;
+
 export const ordonnanceSchema = z.object({
   nomMedecin: z.string().min(1, "Le medecin est requis."),
   dateEmission: z
     .string()
     .min(1, "La date d'emission est requise.")
+    .regex(isoDateRegex, "Format invalide : utilisez AAAA-MM-JJ ou le bouton calendrier.")
     .refine((v) => !Number.isNaN(new Date(v).getTime()), "Date invalide."),
   description: z.string().optional()
 });
