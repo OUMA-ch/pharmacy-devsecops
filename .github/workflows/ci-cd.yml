@@ -183,3 +183,11 @@ jobs:
         with:
           name: rapport-trivy-complet-frontend
           path: trivy-frontend-full-report.txt
+
+      - name: Tag et publication de l'image frontend sur Docker Hub
+        if: github.ref == 'refs/heads/master'
+        run: |
+          docker tag pharmacy-frontend:${{ github.sha }} ${{ secrets.DOCKERHUB_USERNAME }}/pharmacy-frontend:${{ github.sha }}
+          docker tag pharmacy-frontend:${{ github.sha }} ${{ secrets.DOCKERHUB_USERNAME }}/pharmacy-frontend:latest
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/pharmacy-frontend:${{ github.sha }}
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/pharmacy-frontend:latest
