@@ -1,5 +1,6 @@
 package com.salma.mini_projet_pharmacie.exception;
 
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -47,6 +48,19 @@ public class GlobalExceptionHandler {
         public ResponseEntity<Map<String, String>> handleUnreadable(HttpMessageNotReadableException ex) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Map.of("message", "Donnee invalide : verifiez le format des champs (dates au format AAAA-MM-JJ, nombres)."));
+        }
+
+        // Contrainte SQL violee (ex: Ordonnance/Vente creee avec un clientId qui
+        // n'existe pas -> foreign key violee a l'insertion ; ou suppression d'un
+        // element encore reference ailleurs) : sans ce handler,
+        // DataIntegrityViolationException (sous-classe de RuntimeException) tombait
+        // dans handleRuntime et exposait la requete SQL et le nom de la contrainte
+        // en clair au client. Message volontairement generique car applicable aux
+        // deux sens (creation avec reference invalide OU suppression bloquee).
+        @ExceptionHandler(DataIntegrityViolationException.class)
+        public ResponseEntity<Map<String, String>> handleDataIntegrity(DataIntegrityViolationException ex) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("message", "Operation impossible : element introuvable ou encore utilise ailleurs dans l'application."));
         }
 
         @ExceptionHandler(StockInsuffisantException.class)
