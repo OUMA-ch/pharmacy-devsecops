@@ -7,7 +7,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 class MiniProjetPharmacieApplicationTests {
 
     @Test
-    void contextLoads() {
+    void testTemporaireEchecVolontaire() {
+        org.junit.jupiter.api.Assertions.assertTrue(false, "Echec volontaire pour capture d'ecran du pipeline bloque");
     }
-
 }
