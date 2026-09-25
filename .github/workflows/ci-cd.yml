@@ -124,6 +124,12 @@ jobs:
           docker push ${{ secrets.DOCKERHUB_USERNAME }}/pharmacy-backend:${{ github.sha }}
           docker push ${{ secrets.DOCKERHUB_USERNAME }}/pharmacy-backend:latest
 
+      - name: Déclencher le déploiement Render (backend)
+        if: github.ref == 'refs/heads/master'
+        env:
+          HOOK: ${{ secrets.RENDER_DEPLOY_HOOK_BACKEND }}
+        run: curl -fsS -X POST "$HOOK"
+
       - name: Publier le rapport Trivy complet
         if: always()
         uses: actions/upload-artifact@v4
@@ -191,3 +197,9 @@ jobs:
           docker tag pharmacy-frontend:${{ github.sha }} ${{ secrets.DOCKERHUB_USERNAME }}/pharmacy-frontend:latest
           docker push ${{ secrets.DOCKERHUB_USERNAME }}/pharmacy-frontend:${{ github.sha }}
           docker push ${{ secrets.DOCKERHUB_USERNAME }}/pharmacy-frontend:latest
+
+      - name: Déclencher le déploiement Render (frontend)
+        if: github.ref == 'refs/heads/master'
+        env:
+          HOOK: ${{ secrets.RENDER_DEPLOY_HOOK_FRONTEND }}
+        run: curl -fsS -X POST "$HOOK"
