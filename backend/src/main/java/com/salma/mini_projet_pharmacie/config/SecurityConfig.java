@@ -64,7 +64,10 @@ public class SecurityConfig {
                         // (le CorsRegistry de WebConfig ne s'execute qu'apres ce filtre).
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/", "/auth/login", "/auth/logout", "/users/register").permitAll()
-                        .requestMatchers("/actuator/**").permitAll()
+                        // Seuls health (sonde Render) et prometheus (scrape) sont publics ;
+                        // les autres endpoints actuator (metrics...) restent reserves au RESPONSABLE.
+                        .requestMatchers("/actuator/health", "/actuator/prometheus").permitAll()
+                        .requestMatchers("/actuator/**").hasRole("RESPONSABLE")
                         .requestMatchers("/pharmaciens/**", "/reports/**").hasRole("RESPONSABLE")
                         .requestMatchers(
                                 "/produits/**", "/ventes/**", "/commandes/**",
