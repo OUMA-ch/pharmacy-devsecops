@@ -10,17 +10,26 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8080
 export class ApiError extends Error {
   readonly status: number;
   readonly technicalDetail: string;
+  /** Erreurs de validation par champ (400 du backend, cle "erreurs"). */
+  readonly fieldErrors?: Record<string, string>;
 
-  constructor(status: number, userMessage: string, technicalDetail: string) {
+  constructor(
+    status: number,
+    userMessage: string,
+    technicalDetail: string,
+    fieldErrors?: Record<string, string>
+  ) {
     super(userMessage);
     this.status = status;
     this.technicalDetail = technicalDetail;
+    this.fieldErrors = fieldErrors;
   }
 }
 
 interface BackendErrorBody {
   message?: string;
   error?: string;
+  erreurs?: Record<string, string>;
   status?: string;
   data?: unknown;
 }
@@ -119,7 +128,17 @@ export async function apiFetch<T>(path: string, options: RequestOptions = {}): P
 
   if (!res.ok) {
     const errBody = (body ?? {}) as BackendErrorBody;
-    const rawMessage = typeof body === "string" ? body : (errBody.message ?? errBody.error ?? "");
+    // Validation @Valid du backend : { erreurs: { champ: message } } (GlobalExceptionHandler).
+    const fieldErrors =
+      typeof body === "object" && errBody.erreurs && typeof errBody.erreurs === "object"
+        ? errBody.erreurs
+        : undefined;
+    const rawMessage =
+      typeof body === "string"
+        ? body
+        : (errBody.message ??
+          errBody.error ??
+          (fieldErrors ? Object.values(fieldErrors).join(" ") : ""));
     const userMessage = toSafeUserMessage(rawMessage, res.status);
     console.error(`[api] ${init.method ?? "GET"} ${path} -> ${res.status}`, rawMessage || body);
 
@@ -133,7 +152,7 @@ export async function apiFetch<T>(path: string, options: RequestOptions = {}): P
       }
     }
 
-    throw new ApiError(res.status, userMessage, rawMessage || `HTTP ${res.status}`);
+    throw new ApiError(res.status, userMessage, rawMessage || `HTTP ${res.status}`, fieldErrors);
   }
 
   if (

@@ -29,6 +29,7 @@ export function ProduitFormModal({ open, produit, onClose }: ProduitFormModalPro
     handleSubmit,
     reset,
     watch,
+    setError,
     formState: { errors, isSubmitting }
   } = useForm<ProduitFormValues>({
     resolver: zodResolver(produitSchema),
@@ -90,6 +91,14 @@ export function ProduitFormModal({ open, produit, onClose }: ProduitFormModalPro
       onClose();
     },
     onError: (err) => {
+      // 400 de validation backend : message affiche sous chaque champ concerne.
+      if (err instanceof ApiError && err.fieldErrors) {
+        for (const [champ, message] of Object.entries(err.fieldErrors)) {
+          if (champ in produitSchema.shape) {
+            setError(champ as keyof ProduitFormValues, { type: "server", message });
+          }
+        }
+      }
       showError(err instanceof ApiError ? err.message : "Une erreur est survenue.");
     }
   });

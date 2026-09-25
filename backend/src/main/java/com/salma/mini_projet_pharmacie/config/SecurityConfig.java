@@ -28,6 +28,8 @@ import org.springframework.web.cors.CorsConfigurationSource;
 @RequiredArgsConstructor
 public class SecurityConfig {
 
+    private static final String ROLE_RESPONSABLE = "RESPONSABLE";
+
     private final JwtAuthFilter jwtAuthFilter;
     private final RateLimitingFilter rateLimitingFilter;
     private final CorsConfigurationSource corsConfigurationSource;
@@ -64,13 +66,16 @@ public class SecurityConfig {
                         // (le CorsRegistry de WebConfig ne s'execute qu'apres ce filtre).
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/", "/auth/login", "/auth/logout", "/users/register").permitAll()
-                        .requestMatchers("/actuator/**").permitAll()
-                        .requestMatchers("/pharmaciens/**", "/reports/**").hasRole("RESPONSABLE")
+                        // Seuls health (sonde Render) et prometheus (scrape) sont publics ;
+                        // les autres endpoints actuator (metrics...) restent reserves au RESPONSABLE.
+                        .requestMatchers("/actuator/health", "/actuator/prometheus").permitAll()
+                        .requestMatchers("/actuator/**").hasRole(ROLE_RESPONSABLE)
+                        .requestMatchers("/pharmaciens/**", "/reports/**").hasRole(ROLE_RESPONSABLE)
                         .requestMatchers(
                                 "/produits/**", "/ventes/**", "/commandes/**",
                                 "/fournisseurs/**", "/fournitures/**", "/ordonnances/**"
-                        ).hasAnyRole("PHARMACIEN", "RESPONSABLE")
-                        .requestMatchers("/notifications/**").hasAnyRole("CLIENT", "PHARMACIEN", "RESPONSABLE")
+                        ).hasAnyRole("PHARMACIEN", ROLE_RESPONSABLE)
+                        .requestMatchers("/notifications/**").hasAnyRole("CLIENT", "PHARMACIEN", ROLE_RESPONSABLE)
                         .anyRequest().authenticated()
                 )
                 .formLogin(form -> form.disable())
