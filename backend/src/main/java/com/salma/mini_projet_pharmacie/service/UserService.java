@@ -1,5 +1,6 @@
 package com.salma.mini_projet_pharmacie.service;
 
+import com.salma.mini_projet_pharmacie.dto.RegisterClientDTO;
 import com.salma.mini_projet_pharmacie.model.*;
 import com.salma.mini_projet_pharmacie.repository.*;
 import lombok.RequiredArgsConstructor;
@@ -15,8 +16,12 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
 
     // inscription d'un client
-    public Client registerClient(Client client) {
-        client.setPassword(passwordEncoder.encode(client.getPassword()));
+    public Client registerClient(RegisterClientDTO dto) {
+        Client client = new Client();
+        client.setNomUser(dto.getNomUser());
+        client.setEmail(dto.getEmail());
+        client.setTele(dto.getTele());
+        client.setPassword(passwordEncoder.encode(dto.getPassword()));
         client.setRole(Role.CLIENT);
         return clientRepository.save(client);
     }
