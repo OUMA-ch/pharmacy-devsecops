@@ -4,6 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { renderWithProviders } from "../../tests/testUtils";
 import { ProduitFormModal } from "./ProduitFormModal";
 import * as produitsApi from "../../api/produits";
+import { ApiError } from "../../api/client";
 
 vi.mock("../../api/produits");
 
@@ -57,5 +58,28 @@ describe("ProduitFormModal", () => {
       );
     });
     await waitFor(() => expect(onClose).toHaveBeenCalled());
+  });
+
+  it("affiche sous le champ Prix l'erreur de validation 400 renvoyee par le backend", async () => {
+    vi.mocked(produitsApi.createProduit).mockRejectedValue(
+      new ApiError(400, "Le prix doit être positif ou nul.", "HTTP 400", {
+        prixP: "Le prix doit être positif ou nul."
+      })
+    );
+
+    const onClose = vi.fn();
+    const user = userEvent.setup();
+    renderWithProviders(<ProduitFormModal open produit={null} onClose={onClose} />);
+
+    await user.type(screen.getByLabelText(/^Nom:/), "Doliprane");
+    await user.type(screen.getByLabelText(/^Date péremption:/), "2027-01-01");
+    await user.click(screen.getByRole("button", { name: "Valider" }));
+
+    // Le message doit etre dans le bloc du champ Prix (FormField), pas seulement dans le toast.
+    const prixInput = screen.getByLabelText(/^Prix:/);
+    await waitFor(() =>
+      expect(prixInput.parentElement).toHaveTextContent("Le prix doit être positif ou nul.")
+    );
+    expect(onClose).not.toHaveBeenCalled();
   });
 });

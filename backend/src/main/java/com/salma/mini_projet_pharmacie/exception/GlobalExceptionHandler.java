@@ -5,9 +5,11 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 @RestControllerAdvice
@@ -63,6 +65,18 @@ public class GlobalExceptionHandler {
         public ResponseEntity<Map<String, String>> handleDataAccess(DataAccessException ex) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Map.of("message", "Operation impossible : element introuvable ou encore utilise ailleurs dans l'application."));
+        }
+
+        // Echec des contraintes @Valid sur un @RequestBody (ex: ProduitDTO avec prix
+        // negatif) : 400 avec un message par champ, que le frontend affiche sous
+        // l'input concerne. Un seul message par champ (le premier) pour rester lisible.
+        @ExceptionHandler(MethodArgumentNotValidException.class)
+        public ResponseEntity<Map<String, Map<String, String>>> handleValidation(MethodArgumentNotValidException ex) {
+            Map<String, String> erreurs = new LinkedHashMap<>();
+            ex.getBindingResult().getFieldErrors()
+                    .forEach(e -> erreurs.putIfAbsent(e.getField(), e.getDefaultMessage()));
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("erreurs", erreurs));
         }
 
         @ExceptionHandler(StockInsuffisantException.class)

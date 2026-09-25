@@ -3,6 +3,7 @@ package com.salma.mini_projet_pharmacie.controller;
 import com.salma.mini_projet_pharmacie.dto.ProduitDTO;
 import com.salma.mini_projet_pharmacie.service.ProduitService;
 import com.salma.mini_projet_pharmacie.utils.ResponseHandler;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -15,12 +16,12 @@ public class ProduitController {
     private final ProduitService produitService;
 
     @PostMapping
-    public ResponseEntity<?> ajouter(@RequestBody ProduitDTO dto) {
+    public ResponseEntity<?> ajouter(@Valid @RequestBody ProduitDTO dto) {
         return ResponseHandler.success("Produit ajouté avec succès", produitService.ajouterProduit(dto));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> modifier(@PathVariable Integer id, @RequestBody ProduitDTO dto) {
+    public ResponseEntity<?> modifier(@PathVariable Integer id, @Valid @RequestBody ProduitDTO dto) {
         return ResponseHandler.success("Produit mis à jour", produitService.modifierProduit(id, dto));
     }
 
