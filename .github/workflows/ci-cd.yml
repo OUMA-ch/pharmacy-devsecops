@@ -78,6 +78,7 @@ jobs:
           -Dsonar.projectKey=OUMA-ch_pharmacy-devsecops
           -Dsonar.organization=ouma-ch
           -Dsonar.host.url=https://sonarcloud.io
+          -Dsonar.qualitygate.wait=true
 
       - name: Publier le rapport de couverture JaCoCo
         uses: actions/upload-artifact@v4

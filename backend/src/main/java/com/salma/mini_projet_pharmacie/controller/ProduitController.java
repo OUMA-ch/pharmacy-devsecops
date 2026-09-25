@@ -1,5 +1,6 @@
 package com.salma.mini_projet_pharmacie.controller;
 
+import com.salma.mini_projet_pharmacie.dto.ApiResponse;
 import com.salma.mini_projet_pharmacie.dto.ProduitDTO;
 import com.salma.mini_projet_pharmacie.service.ProduitService;
 import com.salma.mini_projet_pharmacie.utils.ResponseHandler;
@@ -16,12 +17,12 @@ public class ProduitController {
     private final ProduitService produitService;
 
     @PostMapping
-    public ResponseEntity<?> ajouter(@Valid @RequestBody ProduitDTO dto) {
+    public ResponseEntity<ApiResponse<ProduitDTO>> ajouter(@Valid @RequestBody ProduitDTO dto) {
         return ResponseHandler.success("Produit ajouté avec succès", produitService.ajouterProduit(dto));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> modifier(@PathVariable Integer id, @Valid @RequestBody ProduitDTO dto) {
+    public ResponseEntity<ApiResponse<ProduitDTO>> modifier(@PathVariable Integer id, @Valid @RequestBody ProduitDTO dto) {
         return ResponseHandler.success("Produit mis à jour", produitService.modifierProduit(id, dto));
     }
 
