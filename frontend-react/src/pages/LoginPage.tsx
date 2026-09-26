@@ -53,6 +53,7 @@ export function LoginPage() {
     <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4">
       <div className="w-full max-w-md rounded-lg bg-white p-8 shadow-md">
         <h1 className="mb-6 text-center text-2xl font-bold text-slate-800">Gestion de Pharmacie</h1>
+          <p className="mt-1 text-center text-xs text-slate-500">Version 1.1</p>
 
         {justRegistered && (
           <p
