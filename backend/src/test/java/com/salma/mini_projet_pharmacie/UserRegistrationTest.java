@@ -50,7 +50,7 @@ class UserRegistrationTest {
         String email = emailUnique();
 
         String reponse = inscrire("{\"nomUser\":\"Pirate\",\"email\":\"" + email
-                + "\",\"password\":\"secret123\",\"tele\":\"0612345678\",\"role\":\"RESPONSABLE\"}");
+                + "\",\"password\":\"Secret123\",\"tele\":\"0612345678\",\"role\":\"RESPONSABLE\"}");
 
         assertEquals("CLIENT", JsonPath.read(reponse, "$.role"));
         User enBase = userRepository.findByEmail(email).orElseThrow();
@@ -61,11 +61,11 @@ class UserRegistrationTest {
     void inscriptionAvecIdExistantNEcrasePasLeCompte() throws Exception {
         String emailVictime = emailUnique();
         int idVictime = JsonPath.read(inscrire("{\"nomUser\":\"Victime\",\"email\":\"" + emailVictime
-                + "\",\"password\":\"secret123\"}"), "$.id");
+                + "\",\"password\":\"Secret123\"}"), "$.id");
 
         String emailPirate = emailUnique();
         int idPirate = JsonPath.read(inscrire("{\"idUser\":" + idVictime + ",\"id\":" + idVictime
-                + ",\"nomUser\":\"Pirate\",\"email\":\"" + emailPirate + "\",\"password\":\"secret123\"}"), "$.id");
+                + ",\"nomUser\":\"Pirate\",\"email\":\"" + emailPirate + "\",\"password\":\"Secret123\"}"), "$.id");
 
         assertNotEquals(idVictime, idPirate);
         assertEquals(emailVictime, userRepository.findById(idVictime).orElseThrow().getEmail());
@@ -75,7 +75,7 @@ class UserRegistrationTest {
     void emailInvalideRenvoie400() throws Exception {
         mockMvc.perform(post("/users/register")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"nomUser\":\"Test\",\"email\":\"pas-un-email\",\"password\":\"secret123\"}"))
+                        .content("{\"nomUser\":\"Test\",\"email\":\"pas-un-email\",\"password\":\"Secret123\"}"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.erreurs.email").value("Email invalide."));
     }

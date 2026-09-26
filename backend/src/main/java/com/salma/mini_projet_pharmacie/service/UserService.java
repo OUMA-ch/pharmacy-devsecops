@@ -26,13 +26,6 @@ public class UserService {
         return clientRepository.save(client);
     }
 
-    // création d'un pharmacien
-    public Pharmacien createPharmacien(Pharmacien pharmacien) {
-        pharmacien.setPassword(passwordEncoder.encode(pharmacien.getPassword()));
-        pharmacien.setRole(Role.PHARMACIEN);
-        return pharmacienRepository.save(pharmacien);
-    }
-
     // suppression d'un pharmacien
     public void deletePharmacien(Integer id) {
         pharmacienRepository.deleteById(id);

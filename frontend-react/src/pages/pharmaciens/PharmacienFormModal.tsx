@@ -8,7 +8,12 @@ import { useToast } from "../../components/ui/ToastProvider";
 import { Modal } from "../../components/ui/Modal";
 import { Button } from "../../components/ui/Button";
 import { FormField, inputClassName } from "../../components/ui/FormField";
-import { pharmacienCreateSchema, type PharmacienFormValues } from "../../lib/validationSchemas";
+import {
+  PASSWORD_RULE,
+  pharmacienCreateSchema,
+  pharmacienEditSchema,
+  type PharmacienFormValues
+} from "../../lib/validationSchemas";
 import type { Pharmacien } from "../../types/api";
 
 interface PharmacienFormModalProps {
@@ -31,12 +36,11 @@ export function PharmacienFormModal({ open, pharmacien, onClose }: PharmacienFor
     register,
     handleSubmit,
     reset,
+    setError,
     watch,
     formState: { errors, isSubmitting }
   } = useForm<PharmacienFormValues>({
-    resolver: zodResolver(
-      isEdit ? pharmacienCreateSchema.partial({ password: true }) : pharmacienCreateSchema
-    ),
+    resolver: zodResolver(isEdit ? pharmacienEditSchema : pharmacienCreateSchema),
     defaultValues: { nomUser: "", email: "", password: "", tele: "" }
   });
 
@@ -70,7 +74,17 @@ export function PharmacienFormModal({ open, pharmacien, onClose }: PharmacienFor
       showSuccess(isEdit ? "Pharmacien modifié." : "Pharmacien créé.");
       onClose();
     },
-    onError: (err) => showError(err instanceof ApiError ? err.message : "Une erreur est survenue.")
+    onError: (err) => {
+      // 400 de validation backend : message affiche sous chaque champ concerne.
+      if (err instanceof ApiError && err.fieldErrors) {
+        for (const [champ, message] of Object.entries(err.fieldErrors)) {
+          if (champ in pharmacienCreateSchema.shape) {
+            setError(champ as keyof PharmacienFormValues, { type: "server", message });
+          }
+        }
+      }
+      showError(err instanceof ApiError ? err.message : "Une erreur est survenue.");
+    }
   });
 
   const nom = watch("nomUser");
@@ -103,6 +117,7 @@ export function PharmacienFormModal({ open, pharmacien, onClose }: PharmacienFor
           label="Password:"
           htmlFor="pharmacien-password"
           error={errors.password?.message}
+          hint={PASSWORD_RULE}
           required={!isEdit}
         >
           <input

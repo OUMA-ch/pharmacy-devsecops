@@ -3,6 +3,10 @@ package com.salma.mini_projet_pharmacie.controller;
 import com.salma.mini_projet_pharmacie.dto.PharmacienDTO;
 import com.salma.mini_projet_pharmacie.model.Pharmacien;
 import com.salma.mini_projet_pharmacie.service.PharmacienCrudService;
+import com.salma.mini_projet_pharmacie.validation.OnCreate;
+import jakarta.validation.Valid;
+import jakarta.validation.groups.Default;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -23,12 +27,12 @@ public class PharmacienCrudController {
     }
 
     @PostMapping
-    public Pharmacien create(@RequestBody PharmacienDTO dto) {
+    public Pharmacien create(@Validated({Default.class, OnCreate.class}) @RequestBody PharmacienDTO dto) {
         return service.create(dto);
     }
 
     @PutMapping("/{id}")
-    public Pharmacien update(@PathVariable Integer id, @RequestBody PharmacienDTO dto) {
+    public Pharmacien update(@PathVariable Integer id, @Valid @RequestBody PharmacienDTO dto) {
         return service.update(id, dto);
     }
 
