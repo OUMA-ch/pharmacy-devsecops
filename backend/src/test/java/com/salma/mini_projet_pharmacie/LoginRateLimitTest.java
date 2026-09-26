@@ -26,7 +26,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 class LoginRateLimitTest {
 
-    private static final String MOT_DE_PASSE = "secret123";
+    private static final String MOT_DE_PASSE = "Secret123";
     private static final AtomicInteger IP_SUIVANTE = new AtomicInteger(1);
 
     @Autowired

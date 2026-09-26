@@ -4,7 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import * as authApi from "../api/auth";
 import { ApiError } from "../api/client";
-import { registerSchema, type RegisterFormValues } from "../lib/validationSchemas";
+import { PASSWORD_RULE, registerSchema, type RegisterFormValues } from "../lib/validationSchemas";
 import { Button } from "../components/ui/Button";
 import { FormField, inputClassName } from "../components/ui/FormField";
 
@@ -15,6 +15,7 @@ export function RegisterPage() {
   const {
     register,
     handleSubmit,
+    setError,
     formState: { errors, isSubmitting }
   } = useForm<RegisterFormValues>({ resolver: zodResolver(registerSchema) });
 
@@ -26,8 +27,19 @@ export function RegisterPage() {
       await authApi.registerClient(values);
       navigate("/login", { state: { registered: true } });
     } catch (err) {
-      const message = err instanceof ApiError ? err.message : "Impossible de créer le compte.";
-      setServerError(message);
+      // 400 de validation backend : message affiche sous chaque champ concerne.
+      let erreurSousUnChamp = false;
+      if (err instanceof ApiError && err.fieldErrors) {
+        for (const [champ, message] of Object.entries(err.fieldErrors)) {
+          if (champ in registerSchema.shape) {
+            setError(champ as keyof RegisterFormValues, { type: "server", message });
+            erreurSousUnChamp = true;
+          }
+        }
+      }
+      if (!erreurSousUnChamp) {
+        setServerError(err instanceof ApiError ? err.message : "Impossible de créer le compte.");
+      }
     }
   }
 
@@ -84,6 +96,7 @@ export function RegisterPage() {
             label="Mot de passe"
             htmlFor="register-password"
             error={errors.password?.message}
+            hint={PASSWORD_RULE}
             required
           >
             <input

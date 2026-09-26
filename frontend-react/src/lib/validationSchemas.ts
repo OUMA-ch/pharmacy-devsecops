@@ -6,6 +6,16 @@ export const loginSchema = z.object({
 });
 export type LoginFormValues = z.infer<typeof loginSchema>;
 
+/**
+ * Politique de mot de passe, identique a @StrongPassword cote backend (qui reste
+ * la reference) : 8 a 72 caracteres, au moins une minuscule, une majuscule et un chiffre.
+ * Non appliquee a la connexion : les comptes existants restent utilisables.
+ */
+export const PASSWORD_RULE =
+  "Le mot de passe doit contenir au moins 8 caractères, dont une majuscule, une minuscule et un chiffre.";
+const strongPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,72}$/;
+export const passwordSchema = z.string().regex(strongPasswordRegex, PASSWORD_RULE);
+
 /** Telephone marocain plausible : 10 chiffres commencant par 0 (ex: 0612345678). */
 const phoneRegex = /^0\d{9}$/;
 
@@ -13,7 +23,7 @@ export const registerSchema = z.object({
   nomUser: z.string().min(1, "Le nom complet est requis."),
   email: z.string().min(1, "L'email est requis.").email("Email invalide."),
   tele: z.string().regex(phoneRegex, "Numero invalide (10 chiffres, ex: 0612345678)."),
-  password: z.string().min(6, "6 caracteres minimum.")
+  password: passwordSchema
 });
 export type RegisterFormValues = z.infer<typeof registerSchema>;
 
@@ -75,10 +85,15 @@ export type FournitureFormValues = z.infer<typeof fournitureSchema>;
 export const pharmacienCreateSchema = z.object({
   nomUser: z.string().min(1, "Le nom est requis."),
   email: z.string().min(1, "L'email est requis.").email("Email invalide."),
-  password: z.string().min(6, "6 caracteres minimum."),
+  password: passwordSchema,
   tele: z.string().optional()
 });
 export type PharmacienFormValues = z.infer<typeof pharmacienCreateSchema>;
+
+/** En modification, un mot de passe vide signifie "ne pas changer". */
+export const pharmacienEditSchema = pharmacienCreateSchema.extend({
+  password: passwordSchema.or(z.literal("")).optional()
+});
 
 export const commandeSchema = z.object({
   fournisseurId: z.coerce.number().int().positive("ID fournisseur requis."),
