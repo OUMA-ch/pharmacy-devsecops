@@ -12,6 +12,19 @@ interface LoginLocationState {
   registered?: boolean;
 }
 
+// Messages fixes par statut : 401 ne distingue jamais email inconnu et mauvais
+// mot de passe (le backend non plus), 429 = trop d'echecs recents (AuthService).
+const LOGIN_BAD_CREDENTIALS_MESSAGE = "Email ou mot de passe incorrect.";
+const LOGIN_TOO_MANY_ATTEMPTS_MESSAGE =
+  "Trop de tentatives de connexion. Veuillez réessayer dans une minute.";
+
+function loginErrorMessage(err: unknown): string {
+  if (!(err instanceof ApiError)) return "Impossible de se connecter.";
+  if (err.status === 401) return LOGIN_BAD_CREDENTIALS_MESSAGE;
+  if (err.status === 429) return LOGIN_TOO_MANY_ATTEMPTS_MESSAGE;
+  return err.message;
+}
+
 export function LoginPage() {
   const { login } = useAuth();
   const navigate = useNavigate();
@@ -32,8 +45,7 @@ export function LoginPage() {
       const redirectTo = location.state?.from?.pathname ?? homeRouteForRole(user.role);
       navigate(redirectTo, { replace: true });
     } catch (err) {
-      const message = err instanceof ApiError ? err.message : "Impossible de se connecter.";
-      setServerError(message);
+      setServerError(loginErrorMessage(err));
     }
   }
 
