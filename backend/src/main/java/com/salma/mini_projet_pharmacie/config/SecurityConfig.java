@@ -1,7 +1,6 @@
 package com.salma.mini_projet_pharmacie.config;
 
 import com.salma.mini_projet_pharmacie.security.JwtAuthFilter;
-import com.salma.mini_projet_pharmacie.security.RateLimitingFilter;
 import com.salma.mini_projet_pharmacie.security.RestAuthEntryPoints;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -31,7 +30,6 @@ public class SecurityConfig {
     private static final String ROLE_RESPONSABLE = "RESPONSABLE";
 
     private final JwtAuthFilter jwtAuthFilter;
-    private final RateLimitingFilter rateLimitingFilter;
     private final CorsConfigurationSource corsConfigurationSource;
 
     /** Force de calcul par defaut (10) : compromis eprouve cout CPU / resistance au brute-force. */
@@ -80,11 +78,9 @@ public class SecurityConfig {
                 )
                 .formLogin(form -> form.disable())
                 .httpBasic(basic -> basic.disable())
-                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
-                // Rejette les tentatives en exces avant meme la verification JWT/mot de
-                // passe : /auth/login est permitAll, donc sans ce filtre rien ne limite
-                // le nombre d'essais.
-                .addFilterBefore(rateLimitingFilter, JwtAuthFilter.class);
+                // La limitation des echecs de connexion (/auth/login) est faite dans
+                // AuthService via LoginAttemptService (par email ET par IP).
+                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }

@@ -4,6 +4,7 @@ import com.salma.mini_projet_pharmacie.dto.LoginRequestDTO;
 import com.salma.mini_projet_pharmacie.dto.UserResponseDTO;
 import com.salma.mini_projet_pharmacie.security.JwtService;
 import com.salma.mini_projet_pharmacie.service.AuthService;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
@@ -45,8 +46,10 @@ public class AuthController {
     private String cookieSameSite;
 
     @PostMapping("/login")
-    public ResponseEntity<UserResponseDTO> login(@RequestBody LoginRequestDTO request) {
-        UserResponseDTO user = authService.login(request);
+    public ResponseEntity<UserResponseDTO> login(@RequestBody LoginRequestDTO request,
+                                                 HttpServletRequest httpRequest) {
+        // IP reelle du client derriere le proxy Render (server.forward-headers-strategy=native).
+        UserResponseDTO user = authService.login(request, httpRequest.getRemoteAddr());
 
         String token = jwtService.generateToken(user.getEmail(), user.getRole(), user.getId());
 

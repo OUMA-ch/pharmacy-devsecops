@@ -78,8 +78,6 @@ Les deux points ouverts de la section précédente sont désormais résolus :
 - **Refresh token** : non implémenté. Le JWT expire après 1h (`security.jwt.expiration-ms`)
   et l'utilisateur doit se reconnecter — acceptable pour ce périmètre, mais une vraie
   UX de production voudrait un refresh token à rotation (cookie séparé).
-- **Rate limiting** sur `/auth/login` : toujours absent (aucune protection anti
-  brute-force). À ajouter (ex. bucket4j, ou au niveau reverse-proxy).
 - **Coût BCrypt** : `BCryptPasswordEncoder()` par défaut (force 10). Un audit de charge
   pourrait ajuster ce facteur selon la capacité serveur réelle.
 
@@ -165,18 +163,23 @@ Résolu :
 - Mots de passe hachés BCrypt (inscription, création/modification pharmacien, connexion)
   + migration automatique des comptes existants ; IDOR sur `/notifications/client/{id}`
   corrigé par vérification d'appartenance (`uid` du JWT) — voir section 1bis.
-- **Rate limiting sur `/auth/login`** : `security/RateLimitingFilter.java` (Bucket4j)
-  limite à 5 tentatives par minute et par IP (identifiée via `req.getRemoteAddr()`),
-  au-delà réponse `429` + en-tête `Retry-After: 60`, avant même la vérification des
-  identifiants. Compteurs en mémoire (`ConcurrentHashMap`, un bucket par IP, jamais
-  purgé) : suffisant pour l'instance unique déployée ici — une architecture
-  multi-nœuds ou une très forte volumétrie d'IP distinctes voudrait un stockage
-  partagé avec expiration (Redis, Caffeine). Si un reverse-proxy est introduit devant
-  le backend, `clientIp()` devra lire `X-Forwarded-For` en ne faisant confiance qu'à ce
-  proxy connu (jamais à l'en-tête brut d'un client, sinon la limite devient triviale à
-  contourner). **Validé en conditions réelles** : 5 tentatives passent, la 6ᵉ et les
-  suivantes reçoivent `429` avec le message et l'en-tête attendus ; les autres routes
-  (`/`, `GET /auth/login`, etc.) restent inaffectées.
+- **Limitation des échecs sur `/auth/login`** : `security/LoginAttemptService.java`,
+  appelé par `AuthService.login`, compte les **échecs** sur une fenêtre glissante de
+  60 s, par email (normalisé en minuscules, emails inconnus compris) **et** par IP
+  client. Dès que l'une des deux clés atteint 5 échecs, la tentative suivante reçoit
+  `429` + en-tête `Retry-After: 60`. Un login réussi remet à zéro le compteur de cet
+  email (pas celui de l'IP). L'IP réelle derrière le proxy Render est obtenue via
+  `server.forward-headers-strategy=native` (RemoteIpValve Tomcat, qui ne fait
+  confiance à `X-Forwarded-For` que s'il vient d'un proxy interne). L'ancien
+  `RateLimitingFilter` (Bucket4j, par `getRemoteAddr()` seul) ne se déclenchait pas
+  en production : derrière le proxy Render, chaque requête arrivait avec une IP de
+  proxy différente. Compteurs en mémoire, purgés à l'expiration : suffisant pour
+  l'instance unique déployée ; une architecture multi-nœuds voudrait un stockage
+  partagé (Redis).
+- **Pas d'énumération d'utilisateurs au login** : email inconnu et mauvais mot de passe
+  renvoient exactement la même réponse (`401`, « Email ou mot de passe incorrect. »),
+  et un hash BCrypt factice est vérifié pour un email inconnu afin que le temps de
+  réponse soit identique.
 
 Reste ouvert :
 

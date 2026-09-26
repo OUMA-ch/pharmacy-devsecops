@@ -65,7 +65,7 @@ describe("LoginPage", () => {
   });
 
   it("affiche un message d'erreur clair sous le formulaire en cas d'echec (pas d'alert bloquante)", async () => {
-    vi.mocked(authApi.login).mockRejectedValue(new ApiError(401, "Mot de passe incorrect.", "raw"));
+    vi.mocked(authApi.login).mockRejectedValue(new ApiError(401, "texte backend quelconque", "raw"));
 
     const user = userEvent.setup();
     renderLoginPage();
@@ -74,6 +74,21 @@ describe("LoginPage", () => {
     await user.type(screen.getByLabelText("Mot de passe:"), "wrong");
     await user.click(screen.getByRole("button", { name: "Se connecter" }));
 
-    expect(await screen.findByText("Mot de passe incorrect.")).toBeInTheDocument();
+    expect(await screen.findByText("Email ou mot de passe incorrect.")).toBeInTheDocument();
+  });
+
+  it("affiche un message invitant a reessayer dans une minute en cas de 429", async () => {
+    vi.mocked(authApi.login).mockRejectedValue(new ApiError(429, "Trop de tentatives", "raw"));
+
+    const user = userEvent.setup();
+    renderLoginPage();
+
+    await user.type(screen.getByLabelText("Email:"), "jean@test.com");
+    await user.type(screen.getByLabelText("Mot de passe:"), "wrong");
+    await user.click(screen.getByRole("button", { name: "Se connecter" }));
+
+    expect(
+      await screen.findByText("Trop de tentatives de connexion. Veuillez réessayer dans une minute.")
+    ).toBeInTheDocument();
   });
 });
