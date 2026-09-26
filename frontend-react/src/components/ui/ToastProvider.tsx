@@ -39,11 +39,9 @@ const AUTO_DISMISS_MS = 5000;
  */
 export function ToastProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([]);
-  const timers = useRef(new Map<number, ReturnType<typeof window.setTimeout>>());
+  const timers = useRef(new Map<number, number>());
 
   const dismiss = useCallback((id: number) => {
-    // eslint-disable-next-line no-console -- diagnostic temporaire
-    console.log("[Toast] dismiss()", { at: new Date().toISOString(), id });
     const timer = timers.current.get(id);
     if (timer !== undefined) {
       window.clearTimeout(timer);
@@ -52,17 +50,11 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     setToasts((current) => current.filter((t) => t.id !== id));
   }, []);
 
-  const dismissAll = useCallback((reason: string) => {
-    // eslint-disable-next-line no-console -- diagnostic temporaire, a retirer une fois le bug confirme/corrige
-    console.log(`[Toast] dismissAll (${reason})`, {
-      at: new Date().toISOString(),
-      idsCleared: toasts.map((t) => t.id)
-    });
+  const dismissAll = useCallback(() => {
     for (const timer of timers.current.values()) window.clearTimeout(timer);
     timers.current.clear();
     setToasts([]);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [toasts]);
+  }, []);
 
   // Une notification appartient a l'action/page qui l'a declenchee : sans ce
   // nettoyage, un toast pas encore auto-disparu (ex: "Cette suppression est
@@ -73,16 +65,9 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   const location = useLocation();
   const previousPathname = useRef(location.pathname);
   useEffect(() => {
-    // eslint-disable-next-line no-console -- diagnostic temporaire
-    console.log("[Toast] location effect check", {
-      at: new Date().toISOString(),
-      previous: previousPathname.current,
-      current: location.pathname
-    });
     if (previousPathname.current === location.pathname) return;
-    const from = previousPathname.current;
     previousPathname.current = location.pathname;
-    dismissAll(`route-change ${from} -> ${location.pathname}`);
+    dismissAll();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.pathname]);
 
@@ -96,17 +81,9 @@ export function ToastProvider({ children }: { children: ReactNode }) {
 
   const push = useCallback(
     (message: string, tone: Toast["tone"]) => {
-      // eslint-disable-next-line no-console -- diagnostic temporaire
-      console.log("[Toast] push() called", {
-        at: new Date().toISOString(),
-        tone,
-        message,
-        pathnameAtCallTime: window.location.pathname
-      });
       setToasts((current) => {
         const duplicate = current.find((t) => t.tone === tone && t.message === message);
         if (duplicate) {
-          console.log("[Toast] push -> duplicate, refreshing timer only", { id: duplicate.id });
           const existingTimer = timers.current.get(duplicate.id);
           if (existingTimer !== undefined) window.clearTimeout(existingTimer);
           scheduleDismiss(duplicate.id);
@@ -118,9 +95,6 @@ export function ToastProvider({ children }: { children: ReactNode }) {
         const next = [...current, { id, message, tone }];
         if (next.length > MAX_TOASTS) {
           const overflow = next.splice(0, next.length - MAX_TOASTS);
-          console.log("[Toast] push -> MAX_TOASTS overflow, evicting", {
-            evictedIds: overflow.map((t) => t.id)
-          });
           for (const removed of overflow) {
             const staleTimer = timers.current.get(removed.id);
             if (staleTimer !== undefined) {
@@ -129,7 +103,6 @@ export function ToastProvider({ children }: { children: ReactNode }) {
             }
           }
         }
-        console.log("[Toast] push -> added new toast", { id, resultingIds: next.map((t) => t.id) });
         return next;
       });
     },
