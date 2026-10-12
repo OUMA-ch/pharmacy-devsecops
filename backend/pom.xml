@@ -5,7 +5,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>4.0.6</version>
+        <version>4.0.8</version>
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
     <groupId>com.salma</groupId>
@@ -29,7 +29,11 @@
     <properties>
         <java.version>17</java.version>
         <tomcat.version>11.0.25</tomcat.version>
-        <spring-framework.version>7.0.8</spring-framework.version>
+        <spring-framework.version>7.0.9</spring-framework.version>
+        <!-- Jackson 3.x (tools.jackson) -->
+        <jackson-bom.version>3.1.7</jackson-bom.version>
+        <!-- Jackson 2.x (com.fasterxml.jackson) -->
+        <jackson-2-bom.version>2.21.7</jackson-2-bom.version>
     </properties>
 
 
